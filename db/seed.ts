@@ -270,7 +270,8 @@ async function seed() {
     { key: "delivery_enabled", value: "false" },
     {
       key: "delivery_message",
-      value: "Online delivery is coming soon. Stay tuned.",
+      value:
+        "Delivery is available! Contact us to confirm delivery options and fees for your location.",
     },
     { key: "delivery_fee", value: "0" },
   ]);

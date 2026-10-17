@@ -9,9 +9,19 @@ const FIELDS = [
   { name: "name", label: "Full name", type: "text", autoComplete: "name" },
   { name: "email", label: "Email", type: "email", autoComplete: "email" },
   { name: "phone", label: "Phone", type: "tel", autoComplete: "tel" },
-  { name: "address", label: "Address", type: "text", autoComplete: "street-address" },
+  {
+    name: "address",
+    label: "Address",
+    type: "text",
+    autoComplete: "street-address",
+  },
   { name: "city", label: "City", type: "text", autoComplete: "address-level2" },
-  { name: "country", label: "Country", type: "text", autoComplete: "country-name" },
+  {
+    name: "country",
+    label: "Country",
+    type: "text",
+    autoComplete: "country-name",
+  },
 ] as const;
 
 export default function Checkout() {
@@ -38,7 +48,10 @@ export default function Checkout() {
         <h1 className="font-display text-4xl italic text-crochic-muted">
           Your basket is empty.
         </h1>
-        <Link to="/shop" className="inline-block mt-6 text-xs uppercase tracking-[0.18em] border-b border-crochic-brown pb-0.5">
+        <Link
+          to="/shop"
+          className="inline-block mt-6 text-xs uppercase tracking-[0.18em] border-b border-crochic-brown pb-0.5"
+        >
           Back to shop
         </Link>
       </div>
@@ -49,9 +62,12 @@ export default function Checkout() {
     <div className="container-crochic py-10 lg:py-16">
       <h1 className="font-display text-4xl sm:text-5xl mb-3">Checkout</h1>
       <p className="text-sm text-crochic-muted mb-10 italic">
-        Payment: Cash on delivery. {get("delivery_message", "Delivery coming soon.")}
+        Payment: Cash on delivery.{" "}
+        {get(
+          "delivery_message",
+          "Delivery is available! Contact us to confirm delivery options and fees for your location.",
+        )}
       </p>
-
       <form
         className="grid lg:grid-cols-[1fr_380px] gap-12"
         onSubmit={(e) => {
@@ -66,15 +82,24 @@ export default function Checkout() {
               country: form.country ?? "",
               notes: notes || undefined,
             },
-            items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+            items: items.map((i) => ({
+              productId: i.productId,
+              quantity: i.quantity,
+            })),
           });
         }}
       >
         <div className="space-y-6">
           <div className="grid sm:grid-cols-2 gap-6">
             {FIELDS.map((f) => (
-              <div key={f.name} className={f.name === "address" ? "sm:col-span-2" : ""}>
-                <label htmlFor={f.name} className="block text-[11px] uppercase tracking-[0.16em] text-crochic-muted mb-2">
+              <div
+                key={f.name}
+                className={f.name === "address" ? "sm:col-span-2" : ""}
+              >
+                <label
+                  htmlFor={f.name}
+                  className="block text-[11px] uppercase tracking-[0.16em] text-crochic-muted mb-2"
+                >
                   {f.label}
                 </label>
                 <input
@@ -84,14 +109,19 @@ export default function Checkout() {
                   required
                   autoComplete={f.autoComplete}
                   value={form[f.name] ?? ""}
-                  onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, [f.name]: e.target.value })
+                  }
                   className="w-full bg-crochic-ivory border border-crochic-blush px-4 py-3.5 text-sm focus:outline-none focus:border-crochic-rose"
                 />
               </div>
             ))}
           </div>
           <div>
-            <label htmlFor="notes" className="block text-[11px] uppercase tracking-[0.16em] text-crochic-muted mb-2">
+            <label
+              htmlFor="notes"
+              className="block text-[11px] uppercase tracking-[0.16em] text-crochic-muted mb-2"
+            >
               Notes (optional)
             </label>
             <textarea
@@ -111,13 +141,23 @@ export default function Checkout() {
             {items.map((item) => (
               <li key={item.productId} className="flex gap-3 items-center">
                 <div className="w-14 h-[4.5rem] bg-crochic-blush/30 overflow-hidden shrink-0">
-                  {item.image && <img src={item.image} alt="" className="w-full h-full object-cover" />}
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm truncate">{item.name}</p>
-                  <p className="text-xs text-crochic-muted">× {item.quantity}</p>
+                  <p className="text-xs text-crochic-muted">
+                    × {item.quantity}
+                  </p>
                 </div>
-                <span className="text-sm">{formatPrice(item.price * item.quantity, currency)}</span>
+                <span className="text-sm">
+                  {formatPrice(item.price * item.quantity, currency)}
+                </span>
               </li>
             ))}
           </ul>
@@ -134,7 +174,9 @@ export default function Checkout() {
             disabled={checkout.isPending}
             className="mt-4 w-full bg-crochic-dark text-crochic-cream py-4 text-xs uppercase tracking-[0.2em] hover:bg-crochic-rose transition-colors disabled:opacity-60"
           >
-            {checkout.isPending ? "Placing order…" : "Place order — cash on delivery"}
+            {checkout.isPending
+              ? "Placing order…"
+              : "Place order — cash on delivery"}
           </button>
         </aside>
       </form>

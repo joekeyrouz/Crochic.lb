@@ -26,7 +26,11 @@ export function CartDrawer() {
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "tween", duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+            transition={{
+              type: "tween",
+              duration: 0.34,
+              ease: [0.22, 1, 0.36, 1],
+            }}
             role="dialog"
             aria-label="Shopping cart"
           >
@@ -97,15 +101,27 @@ export function CartDrawer() {
                           <div className="flex items-center border border-crochic-blush">
                             <button
                               className="p-1.5"
-                              onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                              onClick={() =>
+                                updateQuantity(
+                                  item.productId,
+                                  item.quantity - 1,
+                                )
+                              }
                               aria-label="Decrease quantity"
                             >
                               <Minus className="w-3.5 h-3.5" />
                             </button>
-                            <span className="w-8 text-center text-sm">{item.quantity}</span>
+                            <span className="w-8 text-center text-sm">
+                              {item.quantity}
+                            </span>
                             <button
                               className="p-1.5"
-                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                              onClick={() =>
+                                updateQuantity(
+                                  item.productId,
+                                  item.quantity + 1,
+                                )
+                              }
                               aria-label="Increase quantity"
                             >
                               <Plus className="w-3.5 h-3.5" />
@@ -122,10 +138,15 @@ export function CartDrawer() {
                 <div className="border-t border-crochic-blush p-6 space-y-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-crochic-muted">Subtotal</span>
-                    <span className="font-medium">{formatPrice(subtotal, currency)}</span>
+                    <span className="font-medium">
+                      {formatPrice(subtotal, currency)}
+                    </span>
                   </div>
                   <p className="text-xs text-crochic-muted italic">
-                    {get("delivery_message", "Delivery coming soon.")}
+                    {get(
+                      "delivery_message",
+                      "Delivery is available! Contact us to confirm delivery options and fees for your location.",
+                    )}
                   </p>
                   <Link
                     to="/checkout"

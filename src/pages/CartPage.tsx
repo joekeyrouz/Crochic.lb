@@ -32,30 +32,64 @@ export default function CartPage() {
         <ul className="divide-y divide-crochic-blush">
           {items.map((item) => (
             <li key={item.productId} className="py-6 flex gap-5">
-              <Link to={`/product/${item.slug}`} className="w-24 h-32 bg-crochic-blush/30 overflow-hidden shrink-0">
-                {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover" />}
+              <Link
+                to={`/product/${item.slug}`}
+                className="w-24 h-32 bg-crochic-blush/30 overflow-hidden shrink-0"
+              >
+                {item.image && (
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </Link>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between gap-3">
-                  <Link to={`/product/${item.slug}`} className="font-display text-xl hover:text-crochic-rose transition-colors">
+                  <Link
+                    to={`/product/${item.slug}`}
+                    className="font-display text-xl hover:text-crochic-rose transition-colors"
+                  >
                     {item.name}
                   </Link>
-                  <button onClick={() => removeItem(item.productId)} aria-label={`Remove ${item.name}`} className="text-crochic-muted hover:text-crochic-rose">
+                  <button
+                    onClick={() => removeItem(item.productId)}
+                    aria-label={`Remove ${item.name}`}
+                    className="text-crochic-muted hover:text-crochic-rose"
+                  >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-sm text-crochic-muted mt-1">{formatPrice(item.price, currency)}</p>
+                <p className="text-sm text-crochic-muted mt-1">
+                  {formatPrice(item.price, currency)}
+                </p>
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex items-center border border-crochic-blush">
-                    <button className="p-2" onClick={() => updateQuantity(item.productId, item.quantity - 1)} aria-label="Decrease quantity">
+                    <button
+                      className="p-2"
+                      onClick={() =>
+                        updateQuantity(item.productId, item.quantity - 1)
+                      }
+                      aria-label="Decrease quantity"
+                    >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-10 text-center text-sm">{item.quantity}</span>
-                    <button className="p-2" onClick={() => updateQuantity(item.productId, item.quantity + 1)} aria-label="Increase quantity">
+                    <span className="w-10 text-center text-sm">
+                      {item.quantity}
+                    </span>
+                    <button
+                      className="p-2"
+                      onClick={() =>
+                        updateQuantity(item.productId, item.quantity + 1)
+                      }
+                      aria-label="Increase quantity"
+                    >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <span className="font-medium">{formatPrice(item.price * item.quantity, currency)}</span>
+                  <span className="font-medium">
+                    {formatPrice(item.price * item.quantity, currency)}
+                  </span>
                 </div>
               </div>
             </li>
@@ -70,7 +104,12 @@ export default function CartPage() {
           </div>
           <div className="flex justify-between text-sm py-2 border-b border-crochic-blush">
             <span className="text-crochic-muted">Delivery</span>
-            <span className="italic text-crochic-rose">{get("delivery_message", "Coming soon")}</span>
+            <span className="italic text-crochic-rose">
+              {get(
+                "delivery_message",
+                "Delivery is available! Contact us to confirm delivery options and fees for your location.",
+              )}
+            </span>
           </div>
           <div className="flex justify-between py-4 font-medium">
             <span>Estimated total</span>

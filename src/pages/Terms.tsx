@@ -6,12 +6,12 @@ export default function Terms() {
       <div className="space-y-6 text-crochic-muted leading-relaxed text-sm">
         <p>
           Every CroChic piece is handmade, which means small variations in
-          colour, size and shape are natural and part of each piece's
-          character — not defects.
+          colour, size and shape are natural and part of each piece's character
+          — not defects.
         </p>
         <p>
-          Orders are confirmed manually. We currently accept cash on delivery;
-          online delivery and payment options are coming soon.
+          Orders are confirmed manually. We currently accept cash on delivery.
+          Contact us to confirm delivery options and fees for your location.
         </p>
         <p>
           If something arrives damaged or isn't what you expected, message us

@@ -1,4 +1,9 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useSettings } from "@/lib/shop";
 
 const FAQS = [
@@ -8,7 +13,7 @@ const FAQS = [
   },
   {
     q: "Do you offer delivery?",
-    a: "Online delivery is coming soon. For now, message us on WhatsApp or Instagram and we'll arrange the sweetest way to get your piece to you.",
+    a: "Yes, delivery is available! Contact us on WhatsApp or Instagram to confirm delivery options and fees for your location.",
   },
   {
     q: "Can I order a custom piece?",
@@ -26,13 +31,18 @@ const FAQS = [
 
 export default function FAQ() {
   const { get } = useSettings();
+
   return (
     <div className="container-crochic py-20 lg:py-28 max-w-2xl mx-auto">
       <p className="eyebrow mb-4 text-center">FAQ</p>
       <h1 className="font-display text-5xl text-center mb-4">Little answers</h1>
       <p className="text-center text-crochic-muted mb-12 italic">
-        {get("delivery_message", "Online delivery is coming soon. Stay tuned.")}
+        {get(
+          "delivery_message",
+          "Delivery is available! Contact us to confirm delivery options and fees for your location.",
+        )}
       </p>
+
       <Accordion type="single" collapsible className="space-y-3">
         {FAQS.map((f, i) => (
           <AccordionItem

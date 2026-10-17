@@ -34,7 +34,7 @@ export default function Contact() {
             icon: Mail,
             label: "Email",
             value: get("store_email", "crochic2@gmail.com"),
-            href: `mailto:${get("store_email", "crochic2@gmail.com")}`,
+            href: `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(get("store_email", "crochic2@gmail.com"))}`,
           },
         ].map((c, i) => (
           <Reveal key={c.label} delay={i * 0.1}>

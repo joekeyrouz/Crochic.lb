@@ -50,7 +50,10 @@ export default function ProductDetail() {
         <h1 className="font-display text-4xl italic text-crochic-muted">
           We couldn't find that little treasure.
         </h1>
-        <Link to="/shop" className="inline-block mt-6 text-xs uppercase tracking-[0.18em] border-b border-crochic-brown pb-0.5">
+        <Link
+          to="/shop"
+          className="inline-block mt-6 text-xs uppercase tracking-[0.18em] border-b border-crochic-brown pb-0.5"
+        >
           Back to shop
         </Link>
       </div>
@@ -65,10 +68,17 @@ export default function ProductDetail() {
 
   return (
     <div className="container-crochic py-10 lg:py-16">
-      <nav className="flex items-center gap-1.5 text-xs text-crochic-muted mb-8" aria-label="Breadcrumb">
-        <Link to="/" className="hover:text-crochic-rose">Home</Link>
+      <nav
+        className="flex items-center gap-1.5 text-xs text-crochic-muted mb-8"
+        aria-label="Breadcrumb"
+      >
+        <Link to="/" className="hover:text-crochic-rose">
+          Home
+        </Link>
         <ChevronRight className="w-3 h-3" />
-        <Link to="/shop" className="hover:text-crochic-rose">Shop</Link>
+        <Link to="/shop" className="hover:text-crochic-rose">
+          Shop
+        </Link>
         <ChevronRight className="w-3 h-3" />
         <span className="text-crochic-dark">{product.name}</span>
       </nav>
@@ -97,11 +107,17 @@ export default function ProductDetail() {
                   key={img.url + i}
                   onClick={() => setImageIndex(i)}
                   className={`w-20 aspect-[3/4] overflow-hidden shrink-0 border-2 transition-colors ${
-                    i === imageIndex ? "border-crochic-rose" : "border-transparent"
+                    i === imageIndex
+                      ? "border-crochic-rose"
+                      : "border-transparent"
                   }`}
                   aria-label={`View image ${i + 1}`}
                 >
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -111,7 +127,9 @@ export default function ProductDetail() {
         {/* info */}
         <div className="lg:sticky lg:top-28 self-start">
           <p className="eyebrow mb-3">{product.category.name}</p>
-          <h1 className="font-display text-4xl sm:text-5xl leading-tight">{product.name}</h1>
+          <h1 className="font-display text-4xl sm:text-5xl leading-tight">
+            {product.name}
+          </h1>
           <div className="mt-4 flex items-center gap-3">
             {product.salePrice ? (
               <>
@@ -123,24 +141,36 @@ export default function ProductDetail() {
                 </span>
               </>
             ) : (
-              <span className="text-2xl font-medium">{formatPrice(product.price, currency)}</span>
+              <span className="text-2xl font-medium">
+                {formatPrice(product.price, currency)}
+              </span>
             )}
             {product.isNew && (
-              <span className="bg-crochic-dark text-crochic-cream text-[10px] uppercase tracking-[0.14em] px-2.5 py-1">New</span>
+              <span className="bg-crochic-dark text-crochic-cream text-[10px] uppercase tracking-[0.14em] px-2.5 py-1">
+                New
+              </span>
             )}
           </div>
 
-          <p className="mt-6 text-crochic-muted leading-relaxed">{product.description}</p>
+          <p className="mt-6 text-crochic-muted leading-relaxed">
+            {product.description}
+          </p>
 
           <div className="mt-8 flex items-center gap-4">
             <div className="flex items-center border border-crochic-blush">
-              <button className="p-3" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Decrease quantity">
+              <button
+                className="p-3"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                aria-label="Decrease quantity"
+              >
                 <Minus className="w-4 h-4" />
               </button>
               <span className="w-10 text-center">{quantity}</span>
               <button
                 className="p-3"
-                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                onClick={() =>
+                  setQuantity(Math.min(product.stock, quantity + 1))
+                }
                 aria-label="Increase quantity"
               >
                 <Plus className="w-4 h-4" />
@@ -168,22 +198,26 @@ export default function ProductDetail() {
           </div>
 
           <a
-            href={whatsappLink(get("whatsapp_number"), `Hi CroChic! I'd love to ask about the ${product.name}.`)}
+            href={whatsappLink(
+              get("whatsapp_number"),
+              `Hi CroChic! I'd love to ask about the ${product.name}.`,
+            )}
             target="_blank"
             rel="noreferrer"
             className="mt-4 flex items-center justify-center gap-2 border border-crochic-blush py-3.5 text-xs uppercase tracking-[0.2em] hover:bg-crochic-blush/30 transition-colors"
           >
             <MessageCircle className="w-4 h-4" /> Ask on WhatsApp
           </a>
-
           <p className="mt-4 text-xs italic text-crochic-muted text-center">
             {soldOut
               ? "This piece found its home — message us for a custom one."
               : product.stock <= 5
                 ? `Only ${product.stock} left — each one is handmade.`
-                : get("delivery_message", "Delivery coming soon.")}
+                : get(
+                    "delivery_message",
+                    "Delivery is available! Contact us to confirm delivery options and fees for your location.",
+                  )}
           </p>
-
           <dl className="mt-10 border-t border-crochic-blush divide-y divide-crochic-blush text-sm">
             {[
               ["Materials", product.materials],
@@ -193,8 +227,13 @@ export default function ProductDetail() {
             ]
               .filter(([, v]) => v)
               .map(([k, v]) => (
-                <div key={k} className="py-3.5 grid grid-cols-[120px_1fr] gap-4">
-                  <dt className="text-crochic-muted uppercase text-[11px] tracking-[0.14em] pt-0.5">{k}</dt>
+                <div
+                  key={k}
+                  className="py-3.5 grid grid-cols-[120px_1fr] gap-4"
+                >
+                  <dt className="text-crochic-muted uppercase text-[11px] tracking-[0.14em] pt-0.5">
+                    {k}
+                  </dt>
                   <dd>{v}</dd>
                 </div>
               ))}

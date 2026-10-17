@@ -7,7 +7,11 @@ const FIELDS: { key: string; label: string; hint?: string }[] = [
   { key: "tagline", label: "Tagline" },
   { key: "announcement", label: "Announcement bar" },
   { key: "currency", label: "Currency", hint: "e.g. USD" },
-  { key: "whatsapp_number", label: "WhatsApp number", hint: "Digits with country code" },
+  {
+    key: "whatsapp_number",
+    label: "WhatsApp number",
+    hint: "Digits with country code",
+  },
   { key: "instagram_url", label: "Instagram URL" },
   { key: "store_email", label: "Store email" },
   { key: "delivery_fee", label: "Delivery fee" },
@@ -36,7 +40,8 @@ export default function AdminSettings() {
     onError: (e) => toast.error(e.message),
   });
 
-  const input = "w-full bg-crochic-cream border border-crochic-blush px-4 py-3 text-sm focus:outline-none focus:border-crochic-rose";
+  const input =
+    "w-full bg-crochic-cream border border-crochic-blush px-4 py-3 text-sm focus:outline-none focus:border-crochic-rose";
 
   return (
     <div className="max-w-2xl">
@@ -44,7 +49,10 @@ export default function AdminSettings() {
       <div className="bg-crochic-ivory border border-crochic-blush p-6 space-y-5">
         {FIELDS.map((f) => (
           <div key={f.key}>
-            <label className="block text-[11px] uppercase tracking-[0.16em] text-crochic-muted mb-2" htmlFor={f.key}>
+            <label
+              className="block text-[11px] uppercase tracking-[0.16em] text-crochic-muted mb-2"
+              htmlFor={f.key}
+            >
               {f.label}
             </label>
             <input
@@ -53,7 +61,9 @@ export default function AdminSettings() {
               value={form[f.key] ?? ""}
               onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
             />
-            {f.hint && <p className="text-xs text-crochic-muted mt-1">{f.hint}</p>}
+            {f.hint && (
+              <p className="text-xs text-crochic-muted mt-1">{f.hint}</p>
+            )}
           </div>
         ))}
         <label className="flex items-center gap-3 text-sm cursor-pointer pt-2">
@@ -63,7 +73,7 @@ export default function AdminSettings() {
             checked={deliveryEnabled}
             onChange={(e) => setDeliveryEnabled(e.target.checked)}
           />
-          Delivery enabled (turn off to show “coming soon”)
+          Delivery enabled (turn off to mark delivery as unavailable)
         </label>
         <button
           onClick={() =>

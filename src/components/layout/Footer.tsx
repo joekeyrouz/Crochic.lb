@@ -125,7 +125,7 @@ export function Footer() {
         <div>
           <h3 className="eyebrow !text-crochic-blush mb-5">Visit us</h3>
           <ul className="space-y-3 text-sm text-crochic-cream/70">
-            <li>{get("store_email", "crochic2@gmail.com")}</li>
+            <li>{get("store_email", "hello@crochic.shop")}</li>
             <li>
               <a
                 className="hover:text-crochic-blush transition-colors"
@@ -137,7 +137,10 @@ export function Footer() {
               </a>
             </li>
             <li className="pt-3 text-crochic-blush italic font-display text-base">
-              {get("delivery_message", "Delivery coming soon.")}
+              {get(
+                "delivery_message",
+                "Delivery is available! Contact us to confirm delivery options and fees for your location.",
+              )}
             </li>
           </ul>
         </div>
