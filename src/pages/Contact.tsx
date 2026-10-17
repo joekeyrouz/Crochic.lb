@@ -12,8 +12,8 @@ export default function Contact() {
           Say hello — <em className="text-crochic-rose">we'd love that.</em>
         </h1>
         <p className="mt-6 text-crochic-muted leading-relaxed max-w-md mx-auto">
-          Questions about a piece, a custom order, or a wholesale enquiry?
-          Reach us wherever feels easiest.
+          Questions about a piece, a custom order, or a wholesale enquiry? Reach
+          us wherever feels easiest.
         </p>
       </Reveal>
       <div className="mt-14 grid sm:grid-cols-3 gap-6">
@@ -33,8 +33,8 @@ export default function Contact() {
           {
             icon: Mail,
             label: "Email",
-            value: get("store_email", "hello@crochic.shop"),
-            href: `mailto:${get("store_email", "hello@crochic.shop")}`,
+            value: get("store_email", "crochic2@gmail.com"),
+            href: `mailto:${get("store_email", "crochic2@gmail.com")}`,
           },
         ].map((c, i) => (
           <Reveal key={c.label} delay={i * 0.1}>
@@ -45,7 +45,9 @@ export default function Contact() {
               className="block bg-crochic-ivory border border-crochic-blush p-8 hover:border-crochic-rose transition-colors"
             >
               <c.icon className="w-6 h-6 mx-auto mb-4 text-crochic-rose" />
-              <p className="text-[11px] uppercase tracking-[0.18em] text-crochic-muted mb-1">{c.label}</p>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-crochic-muted mb-1">
+                {c.label}
+              </p>
               <p className="font-medium text-sm">{c.value}</p>
             </a>
           </Reveal>

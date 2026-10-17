@@ -16,32 +16,35 @@ async function seed() {
     return;
   }
 
-  const catRows = await db.insert(categories).values([
-    {
-      name: "Lip Balm Charms",
-      slug: "lip-balm-charms",
-      description:
-        "Tiny crochet holders designed to carry your lip balm beautifully — clipped to your keys, your bag, your life.",
-      image: "/images/products/lipbalm-rose.jpg",
-      sortOrder: 1,
-    },
-    {
-      name: "Little Bags",
-      slug: "little-bags",
-      description:
-        "Small handmade crochet bags and pouches, stitched slowly and made to be loved daily.",
-      image: "/images/products/sunflower-tote.jpg",
-      sortOrder: 2,
-    },
-    {
-      name: "Keychains & Charms",
-      slug: "keychains-charms",
-      description:
-        "Cute crochet companions for your keys, bags and everyday little moments.",
-      image: "/images/products/charm-set.jpg",
-      sortOrder: 3,
-    },
-  ]).$returningId();
+  const catRows = await db
+    .insert(categories)
+    .values([
+      {
+        name: "Lip Balm Charms",
+        slug: "lip-balm-charms",
+        description:
+          "Tiny crochet holders designed to carry your lip balm beautifully — clipped to your keys, your bag, your life.",
+        image: "/images/products/lipbalm-rose.jpg",
+        sortOrder: 1,
+      },
+      {
+        name: "Little Bags",
+        slug: "little-bags",
+        description:
+          "Small handmade crochet bags and pouches, stitched slowly and made to be loved daily.",
+        image: "/images/products/sunflower-tote.jpg",
+        sortOrder: 2,
+      },
+      {
+        name: "Keychains & Charms",
+        slug: "keychains-charms",
+        description:
+          "Cute crochet companions for your keys, bags and everyday little moments.",
+        image: "/images/products/charm-set.jpg",
+        sortOrder: 3,
+      },
+    ])
+    .$returningId();
 
   const [lipBalm, bags, charms] = catRows.map((r) => r.id);
 
@@ -261,9 +264,9 @@ async function seed() {
       value: "Handmade with love • New pieces coming soon",
     },
     { key: "currency", value: "USD" },
-    { key: "whatsapp_number", value: "1234567890" },
+    { key: "whatsapp_number", value: "+96181081191" },
     { key: "instagram_url", value: "https://www.instagram.com/c.cro.chic/" },
-    { key: "store_email", value: "hello@crochic.shop" },
+    { key: "store_email", value: "crochic2@gmail.com" },
     { key: "delivery_enabled", value: "false" },
     {
       key: "delivery_message",

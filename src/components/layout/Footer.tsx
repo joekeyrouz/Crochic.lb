@@ -18,7 +18,10 @@ export function Footer() {
           </p>
           <div className="flex gap-4 mt-6">
             <a
-              href={get("instagram_url", "https://www.instagram.com/c.cro.chic/")}
+              href={get(
+                "instagram_url",
+                "https://www.instagram.com/c.cro.chic/",
+              )}
               target="_blank"
               rel="noreferrer"
               aria-label="Instagram"
@@ -40,26 +43,89 @@ export function Footer() {
         <div>
           <h3 className="eyebrow !text-crochic-blush mb-5">Shop</h3>
           <ul className="space-y-3 text-sm">
-            <li><Link className="hover:text-crochic-blush transition-colors" to="/shop">All pieces</Link></li>
-            <li><Link className="hover:text-crochic-blush transition-colors" to="/shop/lip-balm-charms">Lip Balm Charms</Link></li>
-            <li><Link className="hover:text-crochic-blush transition-colors" to="/shop/little-bags">Little Bags</Link></li>
-            <li><Link className="hover:text-crochic-blush transition-colors" to="/shop/keychains-charms">Keychains &amp; Charms</Link></li>
+            <li>
+              <Link
+                className="hover:text-crochic-blush transition-colors"
+                to="/shop"
+              >
+                All pieces
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="hover:text-crochic-blush transition-colors"
+                to="/shop/lip-balm-charms"
+              >
+                Lip Balm Charms
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="hover:text-crochic-blush transition-colors"
+                to="/shop/little-bags"
+              >
+                Little Bags
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="hover:text-crochic-blush transition-colors"
+                to="/shop/keychains-charms"
+              >
+                Keychains &amp; Charms
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
           <h3 className="eyebrow !text-crochic-blush mb-5">CroChic</h3>
           <ul className="space-y-3 text-sm">
-            <li><Link className="hover:text-crochic-blush transition-colors" to="/about">About</Link></li>
-            <li><Link className="hover:text-crochic-blush transition-colors" to="/faq">FAQ</Link></li>
-            <li><Link className="hover:text-crochic-blush transition-colors" to="/contact">Contact</Link></li>
-            <li><Link className="hover:text-crochic-blush transition-colors" to="/privacy">Privacy</Link></li>
-            <li><Link className="hover:text-crochic-blush transition-colors" to="/terms">Terms</Link></li>
+            <li>
+              <Link
+                className="hover:text-crochic-blush transition-colors"
+                to="/about"
+              >
+                About
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="hover:text-crochic-blush transition-colors"
+                to="/faq"
+              >
+                FAQ
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="hover:text-crochic-blush transition-colors"
+                to="/contact"
+              >
+                Contact
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="hover:text-crochic-blush transition-colors"
+                to="/privacy"
+              >
+                Privacy
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="hover:text-crochic-blush transition-colors"
+                to="/terms"
+              >
+                Terms
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
           <h3 className="eyebrow !text-crochic-blush mb-5">Visit us</h3>
           <ul className="space-y-3 text-sm text-crochic-cream/70">
-            <li>{get("store_email", "hello@crochic.shop")}</li>
+            <li>{get("store_email", "crochic2@gmail.com")}</li>
             <li>
               <a
                 className="hover:text-crochic-blush transition-colors"
@@ -79,7 +145,9 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="container-crochic py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-crochic-cream/50">
           <span>© {year} CroChic. All pieces handmade with love.</span>
-          <span className="tracking-[0.18em] uppercase">Small stitches, big personality</span>
+          <span className="tracking-[0.18em] uppercase">
+            Small stitches, big personality
+          </span>
         </div>
       </div>
     </footer>
