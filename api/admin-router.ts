@@ -15,7 +15,11 @@ import {
 } from "@db/schema";
 
 const slugify = (s: string) =>
-  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 
 const productInput = z.object({
   name: z.string().min(2),
@@ -139,7 +143,10 @@ export const adminRouter = createRouter({
       return db.query.products.findMany({
         where,
         orderBy: desc(products.createdAt),
-        with: { images: { orderBy: asc(productImages.sortOrder) }, category: true },
+        with: {
+          images: { orderBy: asc(productImages.sortOrder) },
+          category: true,
+        },
       });
     }),
 
@@ -261,28 +268,64 @@ export const adminRouter = createRouter({
     }),
 
   updateOrderStatus: adminQuery
-    .input(z.object({ id: z.number(), status: z.string(), note: z.string().optional() }))
+    .input(
+      z.object({
+        id: z.number(),
+        status: z.enum([
+          "pending",
+          "confirmed",
+          "preparing",
+          "ready",
+          "shipped",
+          "delivered",
+          "cancelled",
+        ]),
+        note: z.string().optional(),
+        deliveryFee: z.number().min(0).max(100000).optional(),
+      }),
+    )
     .mutation(async ({ input }) => {
       const db = getDb();
-      await db
-        .update(orders)
-        .set({
-          status: input.status as
-            | "pending"
-            | "confirmed"
-            | "preparing"
-            | "ready"
-            | "shipped"
-            | "delivered"
-            | "cancelled",
-          updatedAt: new Date(),
-        })
-        .where(eq(orders.id, input.id));
+      const existingOrder = await db.query.orders.findFirst({
+        where: eq(orders.id, input.id),
+      });
+
+      if (!existingOrder) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not found.",
+        });
+      }
+
+      const updates: {
+        status: typeof input.status;
+        updatedAt: Date;
+        deliveryFee?: string;
+        total?: string;
+      } = {
+        status: input.status,
+        updatedAt: new Date(),
+      };
+
+      if (input.deliveryFee !== undefined) {
+        updates.deliveryFee = input.deliveryFee.toFixed(2);
+        updates.total = (
+          Number(existingOrder.subtotal) + input.deliveryFee
+        ).toFixed(2);
+      }
+
+      await db.update(orders).set(updates).where(eq(orders.id, input.id));
+
       await db.insert(orderStatusHistory).values({
         orderId: input.id,
         status: input.status,
-        note: input.note,
+        note:
+          input.note ??
+          (input.deliveryFee !== undefined
+            ? `Delivery fee confirmed: ${input.deliveryFee.toFixed(2)}`
+            : undefined),
       });
+
       return { success: true };
     }),
 

@@ -165,10 +165,22 @@ export default function Checkout() {
             <span className="text-crochic-muted">Subtotal</span>
             <span>{formatPrice(subtotal, currency)}</span>
           </div>
+
+          <div className="flex justify-between text-sm py-2 border-t border-crochic-blush">
+            <span className="text-crochic-muted">Delivery fee</span>
+            <span className="text-right text-crochic-rose">
+              Confirmed based on your location
+            </span>
+          </div>
           <div className="flex justify-between py-3 font-medium border-t border-crochic-blush">
-            <span>Total</span>
+            <span>Order subtotal</span>
             <span>{formatPrice(subtotal, currency)}</span>
           </div>
+          <p className="text-xs text-crochic-muted leading-relaxed">
+            Your final total will include the delivery fee, which we will
+            confirm with you before finalizing your order.
+          </p>
+
           <button
             type="submit"
             disabled={checkout.isPending}

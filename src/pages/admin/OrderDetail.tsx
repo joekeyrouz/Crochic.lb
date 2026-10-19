@@ -5,7 +5,15 @@ import { trpc } from "@/providers/trpc";
 import { formatPrice } from "@/lib/shop";
 import { StatusBadge } from "./Dashboard";
 
-const STATUSES = ["pending", "confirmed", "preparing", "ready", "shipped", "delivered", "cancelled"];
+const STATUSES = [
+  "pending",
+  "confirmed",
+  "preparing",
+  "ready",
+  "shipped",
+  "delivered",
+  "cancelled",
+] as const;
 
 export default function AdminOrderDetail() {
   const { id } = useParams();
@@ -26,7 +34,10 @@ export default function AdminOrderDetail() {
 
   return (
     <div className="max-w-3xl">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-crochic-muted hover:text-crochic-rose mb-6">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-crochic-muted hover:text-crochic-rose mb-6"
+      >
         <ArrowLeft className="w-4 h-4" /> Back
       </button>
       <div className="flex items-center gap-4 mb-8">
@@ -41,24 +52,36 @@ export default function AdminOrderDetail() {
           <p className="text-sm text-crochic-muted">{order.customer.email}</p>
           <p className="text-sm text-crochic-muted">{order.customer.phone}</p>
           <p className="text-sm text-crochic-muted mt-2">
-            {order.customer.address}, {order.customer.city}, {order.customer.country}
+            {order.customer.address}, {order.customer.city},{" "}
+            {order.customer.country}
           </p>
-          {order.notes && <p className="text-sm italic mt-3">“{order.notes}”</p>}
+          {order.notes && (
+            <p className="text-sm italic mt-3">“{order.notes}”</p>
+          )}
         </div>
         <div className="bg-crochic-ivory border border-crochic-blush p-6">
           <h2 className="eyebrow mb-4">Update status</h2>
           <div className="flex gap-3">
             <select
               value={order.status}
-              onChange={(e) => update.mutate({ id: order.id, status: e.target.value })}
+              onChange={(e) =>
+                update.mutate({
+                  id: order.id,
+                  status: e.target.value as (typeof STATUSES)[number],
+                })
+              }
               className="flex-1 bg-crochic-cream border border-crochic-blush px-4 py-3 text-sm focus:outline-none"
             >
               {STATUSES.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
           </div>
-          <p className="text-xs text-crochic-muted mt-3">Payment: cash on delivery</p>
+          <p className="text-xs text-crochic-muted mt-3">
+            Payment: cash on delivery
+          </p>
         </div>
       </div>
 
@@ -67,15 +90,19 @@ export default function AdminOrderDetail() {
         <ul className="divide-y divide-crochic-blush text-sm">
           {order.items.map((i) => (
             <li key={i.id} className="py-3 flex justify-between">
-              <span>{i.productName} × {i.quantity}</span>
+              <span>
+                {i.productName} × {i.quantity}
+              </span>
               <span className="font-medium">{formatPrice(i.lineTotal)}</span>
             </li>
           ))}
           <li className="py-3 flex justify-between text-crochic-muted">
-            <span>Subtotal</span><span>{formatPrice(order.subtotal)}</span>
+            <span>Subtotal</span>
+            <span>{formatPrice(order.subtotal)}</span>
           </li>
           <li className="py-3 flex justify-between font-medium text-base">
-            <span>Total</span><span>{formatPrice(order.total)}</span>
+            <span>Total</span>
+            <span>{formatPrice(order.total)}</span>
           </li>
         </ul>
       </div>

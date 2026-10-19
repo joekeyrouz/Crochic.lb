@@ -46,15 +46,19 @@ const jwks = env.kimiAuthUrl
 async function verifyAccessToken(
   accessToken: string,
 ): Promise<{ userId: string; clientId: string }> {
+  if (!jwks) {
+    throw new Error("Kimi authentication is not configured.");
+  }
+
   const { payload } = await jose.jwtVerify(accessToken, jwks);
-if (!jwks) {
-  throw new Error("Kimi authentication is not configured.");
-}
+
   const userId = payload.user_id as string;
   const clientId = payload.client_id as string;
+
   if (!userId) {
     throw new Error("user_id missing from access token");
   }
+
   return { userId, clientId };
 }
 
@@ -87,10 +91,7 @@ export function createOAuthCallbackHandler() {
       if (error === "access_denied") {
         return c.redirect("/", 302);
       }
-      return c.json(
-        { error, error_description: errorDescription },
-        400,
-      );
+      return c.json({ error, error_description: errorDescription }, 400);
     }
 
     if (!code || !state) {
