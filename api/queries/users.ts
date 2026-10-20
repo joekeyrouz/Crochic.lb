@@ -1,10 +1,11 @@
 import { eq } from "drizzle-orm";
 import * as schema from "@db/schema";
-import type { InsertUser } from "@db/schema";
+import type { InsertUser, User } from "@db/schema";
 import { getDb } from "./connection";
-import { env } from "../lib/env";
 
-export async function findUserByUnionId(unionId: string) {
+export async function findUserByUnionId(
+  unionId: string,
+): Promise<User | undefined> {
   const rows = await getDb()
     .select()
     .from(schema.users)
@@ -13,24 +14,57 @@ export async function findUserByUnionId(unionId: string) {
   return rows.at(0);
 }
 
-export async function upsertUser(data: InsertUser) {
-  const values = { ...data };
-  const updateSet: Partial<InsertUser> = {
-    lastSignInAt: new Date(),
-    ...data,
-  };
+export async function findUserByEmail(
+  email: string,
+): Promise<User | undefined> {
+  const rows = await getDb()
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.email, email))
+    .limit(1);
+  return rows.at(0);
+}
 
-  if (
-    values.role === undefined &&
-    values.unionId &&
-    values.unionId === env.ownerUnionId
-  ) {
-    values.role = "admin";
-    updateSet.role = "admin";
+export async function upsertUser(data: InsertUser): Promise<User> {
+  const email = data.email?.trim().toLowerCase();
+  if (!email) {
+    throw new Error(
+      "A verified email address is required to create an account.",
+    );
+  }
+
+  const values: InsertUser = {
+    ...data,
+    email,
+    unionId: email,
+    role: "user",
+    lastSignInAt: new Date(),
+  };
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    values.unionId = existing.unionId;
+    values.role = existing.role;
+    await getDb()
+      .update(schema.users)
+      .set(values)
+      .where(eq(schema.users.id, existing.id));
+    return { ...existing, ...values };
   }
 
   await getDb()
     .insert(schema.users)
     .values(values)
-    .onDuplicateKeyUpdate({ set: updateSet });
+    .onDuplicateKeyUpdate({
+      set: {
+        name: values.name,
+        email: values.email,
+        avatar: values.avatar,
+        lastSignInAt: values.lastSignInAt,
+      },
+    });
+  const user = await findUserByUnionId(email);
+  if (!user) {
+    throw new Error("Account creation did not return the saved user.");
+  }
+  return user;
 }

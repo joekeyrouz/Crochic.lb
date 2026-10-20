@@ -19,6 +19,7 @@ export const users = mysqlTable("users", {
   name: varchar("name", { length: 255 }),
   email: varchar("email", { length: 320 }),
   avatar: text("avatar"),
+  passwordHash: varchar("passwordHash", { length: 255 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt")
@@ -27,6 +28,27 @@ export const users = mysqlTable("users", {
     .$onUpdate(() => new Date()),
   lastSignInAt: timestamp("lastSignInAt").defaultNow().notNull(),
 });
+
+export const adminLoginAttempts = mysqlTable("admin_login_attempts", {
+  email: varchar("email", { length: 320 }).primaryKey(),
+  attempts: int("attempts").default(0).notNull(),
+  windowStartedAt: timestamp("windowStartedAt").notNull(),
+  lockedUntil: timestamp("lockedUntil"),
+});
+
+export const emailLoginCodes = mysqlTable(
+  "email_login_codes",
+  {
+    email: varchar("email", { length: 320 }).primaryKey(),
+    codeHash: varchar("codeHash", { length: 64 }).notNull(),
+    expiresAt: timestamp("expiresAt").notNull(),
+    attempts: int("attempts").default(0).notNull(),
+    sends: int("sends").default(1).notNull(),
+    windowStartedAt: timestamp("windowStartedAt").notNull(),
+    sentAt: timestamp("sentAt").notNull(),
+  },
+  (t) => [index("email_login_codes_window_idx").on(t.windowStartedAt)],
+);
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
@@ -198,17 +220,14 @@ export const newsletterSubscribers = mysqlTable(
   (t) => [uniqueIndex("newsletter_email_unique").on(t.email)],
 );
 
-export const reviews = mysqlTable(
-  "reviews",
-  {
-    id: serial("id").primaryKey(),
-    customerName: varchar("customerName", { length: 120 }).notNull(),
-    review: text("review").notNull(),
-    rating: int("rating").default(5).notNull(),
-    approved: boolean("approved").default(true).notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-);
+export const reviews = mysqlTable("reviews", {
+  id: serial("id").primaryKey(),
+  customerName: varchar("customerName", { length: 120 }).notNull(),
+  review: text("review").notNull(),
+  rating: int("rating").default(5).notNull(),
+  approved: boolean("approved").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
 
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;

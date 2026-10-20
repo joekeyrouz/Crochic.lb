@@ -1,5 +1,33 @@
 # React + TypeScript + Vite
 
+## Sign-in and admin setup
+
+Customers can sign in with Google or request a one-time code by email. Verifying
+an email code creates the account on first sign-in. Email codes expire after 10
+minutes, are single-use, and are rate-limited. Admin sign-in is a separate
+email/password form at `/admin/login`, with no link from the customer site.
+Only existing database users with the `admin` role and a CLI-configured password
+can access admin APIs.
+
+1. Copy `.env.example` to `.env` and keep your existing `DATABASE_URL`.
+2. In Google Cloud Console, create a Web OAuth client. Add
+   `http://localhost:3000/api/auth/google/callback` as an authorized redirect URI.
+   Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
+3. Create a Resend account, verify a sender domain/address, and set
+   `RESEND_API_KEY` and `EMAIL_FROM` (for example, `CroChic <login@your-domain>`).
+4. Generate a private session key with
+   `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+   and set the output as `SESSION_SECRET`.
+5. Apply the database migrations with `npm run db:migrate`.
+6. Set a password on the existing admin account using `npm run admin:set-password`.
+   The command verifies that the email belongs to a user already marked `admin`
+   and does not echo the password.
+7. Restart the app.
+
+For a hosted deployment, add the same server-side settings to the hosting
+provider, and register `https://<your-domain>/api/auth/google/callback` as an
+authorized Google redirect URI. Never expose these settings as `VITE_*` values.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
@@ -17,9 +45,9 @@ If you are developing a production application, we recommend updating the config
 
 ```js
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
 
@@ -34,40 +62,40 @@ export default defineConfig([
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
+]);
 ```
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
 // eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+import reactX from "eslint-plugin-react-x";
+import reactDom from "eslint-plugin-react-dom";
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
       // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
+      reactX.configs["recommended-typescript"],
       // Enable lint rules for React DOM
       reactDom.configs.recommended,
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
+]);
 ```

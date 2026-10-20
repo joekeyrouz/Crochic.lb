@@ -8,6 +8,20 @@
       "when": 1791228231841,
       "tag": "0000_talented_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1792494589467,
+      "tag": "0001_tough_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1792495298668,
+      "tag": "0002_loose_chronomancer",
+      "breakpoints": true
     }
   ]
 }

@@ -8,10 +8,11 @@
     "build": "vite build && esbuild api/boot.ts --platform=node --bundle --format=esm --outdir=dist --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\"",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "NODE_ENV=production node dist/boot.js",
+    "start": "node -e \"process.env.NODE_ENV='production'; import('./dist/boot.js')\"",
     "check": "tsc -b",
     "format": "prettier --write .",
     "test": "vitest run",
+    "admin:set-password": "node scripts/set-admin-password.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push"

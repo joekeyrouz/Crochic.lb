@@ -136,29 +136,39 @@ export function Header() {
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ type: "tween", duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                type: "tween",
+                duration: 0.32,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <div className="flex items-center justify-between mb-10">
                 <span className="font-display text-2xl">
                   Cro<span className="italic text-crochic-rose">Chic</span>
                 </span>
-                <button onClick={() => setMobileOpen(false)} aria-label="Close menu">
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Close menu"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <nav className="flex flex-col gap-6 text-lg font-display">
-                {[{ to: "/", label: "Home" }, ...NAV, { to: "/search", label: "Search" }].map(
-                  (n) => (
-                    <NavLink
-                      key={n.to}
-                      to={n.to}
-                      onClick={() => setMobileOpen(false)}
-                      className="hover:text-crochic-rose transition-colors"
-                    >
-                      {n.label}
-                    </NavLink>
-                  ),
-                )}
+                {[
+                  { to: "/", label: "Home" },
+                  ...NAV,
+                  { to: "/search", label: "Search" },
+                  { to: "/login", label: "Sign in" },
+                ].map((n) => (
+                  <NavLink
+                    key={n.to}
+                    to={n.to}
+                    onClick={() => setMobileOpen(false)}
+                    className="hover:text-crochic-rose transition-colors"
+                  >
+                    {n.label}
+                  </NavLink>
+                ))}
               </nav>
               <div className="mt-auto text-xs text-crochic-muted flex items-center gap-2">
                 <Heart className="w-3.5 h-3.5 text-crochic-rose" />
