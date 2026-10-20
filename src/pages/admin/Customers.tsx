@@ -157,29 +157,23 @@ export default function AdminCustomers() {
                 </td>
                 <td className="px-5 py-3">
                   <div className="flex justify-end gap-2">
-                    <Button
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon"
+                      className="p-2 hover:text-crochic-rose"
                       aria-label={`Edit ${customer.name}`}
-                      title="Edit customer"
-                      className="size-10 text-crochic-dark hover:bg-crochic-blush/40 hover:text-crochic-rose"
                       onClick={() => openEditor(customer)}
                     >
-                      <Pencil aria-hidden="true" className="size-4" />
-                    </Button>
-                    <Button
+                      <Pencil aria-hidden="true" className="w-4 h-4" />
+                    </button>
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="icon"
+                      className="p-2 hover:text-red-600"
                       aria-label={`Delete ${customer.name}`}
-                      title="Delete customer"
-                      className="size-10 text-destructive hover:bg-destructive/10"
                       onClick={() => setDeletingCustomer(customer)}
                       disabled={deleteCustomer.isPending}
                     >
-                      <Trash2 aria-hidden="true" className="size-4" />
-                    </Button>
+                      <Trash2 aria-hidden="true" className="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
               </tr>
