@@ -356,6 +356,70 @@ export const adminRouter = createRouter({
         }));
     }),
 
+  updateCustomer: adminQuery
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        name: z.string().trim().min(1).max(160),
+        email: z.string().trim().email().max(320),
+        phone: z.string().trim().max(60).nullable(),
+        address: z.string().trim().max(300).nullable(),
+        city: z.string().trim().max(120).nullable(),
+        country: z.string().trim().max(120).nullable(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      const customer = await getDb().query.customers.findFirst({
+        where: eq(customers.id, id),
+        columns: { id: true },
+      });
+      if (!customer) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Customer not found.",
+        });
+      }
+
+      await getDb()
+        .update(customers)
+        .set({
+          ...data,
+          email: data.email.toLowerCase(),
+          phone: data.phone || null,
+          address: data.address || null,
+          city: data.city || null,
+          country: data.country || null,
+        })
+        .where(eq(customers.id, id));
+      return { success: true };
+    }),
+
+  deleteCustomer: adminQuery
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const customer = await getDb().query.customers.findFirst({
+        where: eq(customers.id, input.id),
+        with: { orders: true },
+      });
+      if (!customer) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Customer not found.",
+        });
+      }
+      if (customer.orders.length > 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message:
+            "This customer has order history and cannot be deleted. Edit their details instead.",
+        });
+      }
+
+      await getDb().delete(customers).where(eq(customers.id, input.id));
+      return { success: true };
+    }),
+
   /* ------------------------------- settings ------------------------------ */
   settings: adminQuery.query(async () => {
     const rows = await getDb().select().from(siteSettings);
