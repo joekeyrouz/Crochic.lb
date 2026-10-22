@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { asc, desc, eq, sql, like, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, sql, like, or } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
@@ -286,44 +286,107 @@ export const adminRouter = createRouter({
     )
     .mutation(async ({ input }) => {
       const db = getDb();
-      const existingOrder = await db.query.orders.findFirst({
-        where: eq(orders.id, input.id),
-      });
-
-      if (!existingOrder) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Order not found.",
+      await db.transaction(async (tx) => {
+        const existingOrder = await tx.query.orders.findFirst({
+          where: eq(orders.id, input.id),
         });
-      }
 
-      const updates: {
-        status: typeof input.status;
-        updatedAt: Date;
-        deliveryFee?: string;
-        total?: string;
-      } = {
-        status: input.status,
-        updatedAt: new Date(),
-      };
+        if (!existingOrder) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Order not found.",
+          });
+        }
 
-      if (input.deliveryFee !== undefined) {
-        updates.deliveryFee = input.deliveryFee.toFixed(2);
-        updates.total = (
-          Number(existingOrder.subtotal) + input.deliveryFee
-        ).toFixed(2);
-      }
+        const updates: {
+          status: typeof input.status;
+          updatedAt: Date;
+          deliveryFee?: string;
+          total?: string;
+        } = {
+          status: input.status,
+          updatedAt: new Date(),
+        };
 
-      await db.update(orders).set(updates).where(eq(orders.id, input.id));
+        if (input.deliveryFee !== undefined) {
+          updates.deliveryFee = input.deliveryFee.toFixed(2);
+          updates.total = (
+            Number(existingOrder.subtotal) + input.deliveryFee
+          ).toFixed(2);
+        }
 
-      await db.insert(orderStatusHistory).values({
-        orderId: input.id,
-        status: input.status,
-        note:
-          input.note ??
-          (input.deliveryFee !== undefined
-            ? `Delivery fee confirmed: ${input.deliveryFee.toFixed(2)}`
-            : undefined),
+        const statusChanged = existingOrder.status !== input.status;
+        const [updateResult] = await tx
+          .update(orders)
+          .set(updates)
+          .where(
+            statusChanged
+              ? and(
+                  eq(orders.id, input.id),
+                  eq(orders.status, existingOrder.status),
+                )
+              : eq(orders.id, input.id),
+          );
+
+        if (statusChanged && updateResult.affectedRows !== 1) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "The order status changed. Refresh and try again.",
+          });
+        }
+
+        const cancelling =
+          existingOrder.status !== "cancelled" && input.status === "cancelled";
+        const reinstating =
+          existingOrder.status === "cancelled" && input.status !== "cancelled";
+
+        if (cancelling || reinstating) {
+          const items = await tx.query.orderItems.findMany({
+            where: eq(orderItems.orderId, input.id),
+          });
+          const quantitiesByProduct = new Map<number, number>();
+          for (const item of items) {
+            quantitiesByProduct.set(
+              item.productId,
+              (quantitiesByProduct.get(item.productId) ?? 0) + item.quantity,
+            );
+          }
+
+          for (const [productId, quantity] of quantitiesByProduct) {
+            const [stockResult] = await tx
+              .update(products)
+              .set({
+                stock: reinstating
+                  ? sql`${products.stock} - ${quantity}`
+                  : sql`${products.stock} + ${quantity}`,
+              })
+              .where(
+                reinstating
+                  ? and(
+                      eq(products.id, productId),
+                      gte(products.stock, quantity),
+                    )
+                  : eq(products.id, productId),
+              );
+
+            if (reinstating && stockResult.affectedRows !== 1) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "There is not enough stock to reinstate this order.",
+              });
+            }
+          }
+        }
+
+        await tx.insert(orderStatusHistory).values({
+          orderId: input.id,
+          status: input.status,
+          note:
+            input.note ??
+            (input.deliveryFee !== undefined
+              ? `Delivery fee confirmed: ${input.deliveryFee.toFixed(2)}`
+              : undefined),
+        });
       });
 
       return { success: true };
