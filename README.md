@@ -28,6 +28,12 @@ For a hosted deployment, add the same server-side settings to the hosting
 provider, and register `https://<your-domain>/api/auth/google/callback` as an
 authorized Google redirect URI. Never expose these settings as `VITE_*` values.
 
+Product images can be selected from the device in the admin product editor.
+JPEG, PNG, WebP, and GIF files up to 5 MB are stored in
+`PRODUCT_IMAGE_UPLOAD_DIR` (defaults to `uploads/products`). Configure this
+directory as persistent storage in production so uploaded images remain
+available across deployments and restarts.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

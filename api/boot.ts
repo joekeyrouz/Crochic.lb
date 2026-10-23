@@ -6,6 +6,7 @@ import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
 import { createGoogleCallbackHandler, createGoogleLoginHandler } from "./auth";
+import { getProductImage, uploadProductImage } from "./product-images";
 import { Paths } from "@contracts/constants";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
@@ -13,6 +14,8 @@ const app = new Hono<{ Bindings: HttpBindings }>();
 app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 app.get(Paths.googleLogin, createGoogleLoginHandler());
 app.get(Paths.googleCallback, createGoogleCallbackHandler());
+app.post("/api/admin/product-images", uploadProductImage);
+app.get("/api/product-images/:filename", getProductImage);
 app.use("/api/trpc/*", async (c) => {
   return fetchRequestHandler({
     endpoint: "/api/trpc",

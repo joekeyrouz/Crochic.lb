@@ -56,7 +56,10 @@ export const shopRouter = createRouter({
       const conds = [eq(products.active, true)];
       if (input.category) {
         const cat = await getDb().query.categories.findFirst({
-          where: eq(categories.slug, input.category),
+          where: and(
+            eq(categories.slug, input.category),
+            eq(categories.active, true),
+          ),
         });
         if (!cat) return [];
         conds.push(eq(products.categoryId, cat.id));
@@ -100,7 +103,10 @@ export const shopRouter = createRouter({
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
       const product = await getDb().query.products.findFirst({
-        where: and(eq(products.slug, input.slug), eq(products.active, true)),
+        where: and(
+          eq(products.slug, input.slug),
+          eq(products.active, true),
+        ),
         with: withImages,
       });
       if (!product)

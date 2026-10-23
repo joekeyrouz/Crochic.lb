@@ -19,7 +19,20 @@ const slugify = (s: string) =>
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+    .replace(/(^-|-$)/g, "") || "item";
+
+async function uniqueSlug(
+  name: string,
+  isTaken: (slug: string) => Promise<boolean>,
+) {
+  const base = slugify(name);
+  let slug = base;
+  let suffix = 2;
+  while (await isTaken(slug)) {
+    slug = `${base}-${suffix++}`;
+  }
+  return slug;
+}
 
 const productInput = z.object({
   name: z.string().min(2),
@@ -38,7 +51,7 @@ const productInput = z.object({
   active: z.boolean().default(true),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
-  images: z.array(z.string()).default([]),
+  images: z.array(z.string().trim().min(1).max(500)).optional(),
 });
 
 export const adminRouter = createRouter({
@@ -98,16 +111,27 @@ export const adminRouter = createRouter({
     .input(
       z.object({
         id: z.number().optional(),
-        name: z.string().min(2),
+        name: z.string().trim().min(2).max(120),
         description: z.string().optional(),
-        image: z.string().optional(),
+        image: z.string().max(500).optional(),
         active: z.boolean().default(true),
         sortOrder: z.number().int().default(0),
       }),
     )
     .mutation(async ({ input }) => {
       const db = getDb();
-      const slug = slugify(input.name);
+      const slug = await uniqueSlug(input.name, async (candidate) => {
+        const existing = await db.query.categories.findFirst({
+          where: input.id
+            ? and(
+                eq(categories.slug, candidate),
+                sql`${categories.id} <> ${input.id}`,
+              )
+            : eq(categories.slug, candidate),
+          columns: { id: true },
+        });
+        return Boolean(existing);
+      });
       if (input.id) {
         await db
           .update(categories)
@@ -125,7 +149,28 @@ export const adminRouter = createRouter({
   deleteCategory: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await getDb().delete(categories).where(eq(categories.id, input.id));
+      const db = getDb();
+      const category = await db.query.categories.findFirst({
+        where: eq(categories.id, input.id),
+        columns: { id: true },
+      });
+      if (!category) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Collection not found.",
+        });
+      }
+      const linkedProducts = await db.query.products.findMany({
+        where: eq(products.categoryId, input.id),
+        columns: { id: true },
+      });
+      if (linkedProducts.length > 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `This collection still contains ${linkedProducts.length} product(s). Move or delete them before deleting the collection.`,
+        });
+      }
+      await db.delete(categories).where(eq(categories.id, input.id));
       return { success: true };
     }),
 
@@ -163,8 +208,14 @@ export const adminRouter = createRouter({
 
   saveProduct: adminQuery.input(productInput).mutation(async ({ input }) => {
     const db = getDb();
-    const { images, ...data } = input;
-    const slug = slugify(data.name);
+    const { images = [], ...data } = input;
+    const slug = await uniqueSlug(data.name, async (candidate) => {
+      const existing = await db.query.products.findFirst({
+        where: eq(products.slug, candidate),
+        columns: { id: true },
+      });
+      return Boolean(existing);
+    });
     const values = {
       ...data,
       slug,
@@ -172,19 +223,18 @@ export const adminRouter = createRouter({
       salePrice: data.salePrice != null ? data.salePrice.toFixed(2) : null,
       updatedAt: new Date(),
     };
-    // NOTE: id omitted for insert — handled below
-    const anyValues = values as typeof values & { id?: number };
-    delete anyValues.id;
-    const [row] = await db.insert(products).values(anyValues).$returningId();
-    for (let i = 0; i < images.length; i++) {
-      await db.insert(productImages).values({
-        productId: row.id,
-        url: images[i],
-        sortOrder: i,
-        isPrimary: i === 0,
-      });
-    }
-    return { success: true, id: row.id };
+    return db.transaction(async (tx) => {
+      const [row] = await tx.insert(products).values(values).$returningId();
+      for (let i = 0; i < images.length; i++) {
+        await tx.insert(productImages).values({
+          productId: row.id,
+          url: images[i],
+          sortOrder: i,
+          isPrimary: i === 0,
+        });
+      }
+      return { success: true, id: row.id };
+    });
   }),
 
   updateProduct: adminQuery
@@ -192,35 +242,81 @@ export const adminRouter = createRouter({
     .mutation(async ({ input }) => {
       const db = getDb();
       const { id, images, ...data } = input;
-      await db
-        .update(products)
-        .set({
-          ...data,
-          slug: slugify(data.name),
-          price: data.price.toFixed(2),
-          salePrice: data.salePrice != null ? data.salePrice.toFixed(2) : null,
-          updatedAt: new Date(),
-        })
-        .where(eq(products.id, id));
-      if (images.length > 0) {
-        await db.delete(productImages).where(eq(productImages.productId, id));
-        for (let i = 0; i < images.length; i++) {
-          await db.insert(productImages).values({
-            productId: id,
-            url: images[i],
-            sortOrder: i,
-            isPrimary: i === 0,
+      const slug = await uniqueSlug(data.name, async (candidate) => {
+        const existing = await db.query.products.findFirst({
+          where: and(
+            eq(products.slug, candidate),
+            sql`${products.id} <> ${id}`,
+          ),
+          columns: { id: true },
+        });
+        return Boolean(existing);
+      });
+      await db.transaction(async (tx) => {
+        const product = await tx.query.products.findFirst({
+          where: eq(products.id, id),
+          columns: { id: true },
+        });
+        if (!product) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Product not found.",
           });
         }
-      }
+        await tx
+          .update(products)
+          .set({
+            ...data,
+            slug,
+            price: data.price.toFixed(2),
+            salePrice:
+              data.salePrice != null ? data.salePrice.toFixed(2) : null,
+            updatedAt: new Date(),
+          })
+          .where(eq(products.id, id));
+        if (images !== undefined) {
+          await tx.delete(productImages).where(eq(productImages.productId, id));
+          for (let i = 0; i < images.length; i++) {
+            await tx.insert(productImages).values({
+              productId: id,
+              url: images[i],
+              sortOrder: i,
+              isPrimary: i === 0,
+            });
+          }
+        }
+      });
       return { success: true, id };
     }),
 
   deleteProduct: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await getDb().delete(products).where(eq(products.id, input.id));
-      return { success: true };
+      return getDb().transaction(async (tx) => {
+        const product = await tx.query.products.findFirst({
+          where: eq(products.id, input.id),
+          columns: { id: true },
+        });
+        if (!product) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Product not found.",
+          });
+        }
+        const orderItemsForProduct = await tx.query.orderItems.findFirst({
+          where: eq(orderItems.productId, input.id),
+          columns: { id: true },
+        });
+        if (orderItemsForProduct) {
+          await tx
+            .update(products)
+            .set({ active: false, updatedAt: new Date() })
+            .where(eq(products.id, input.id));
+          return { success: true, archived: true };
+        }
+        await tx.delete(products).where(eq(products.id, input.id));
+        return { success: true, archived: false };
+      });
     }),
 
   /* -------------------------------- orders ------------------------------- */

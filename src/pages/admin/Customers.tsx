@@ -65,7 +65,11 @@ export default function AdminCustomers() {
 
   const updateCustomer = trpc.admin.updateCustomer.useMutation({
     onSuccess: async () => {
-      await utils.admin.customers.invalidate();
+      await Promise.all([
+        utils.admin.customers.invalidate(),
+        utils.admin.orders.invalidate(),
+        utils.admin.order.invalidate(),
+      ]);
       setEditingCustomer(null);
       toast.success("Customer details updated");
     },

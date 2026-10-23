@@ -11,9 +11,14 @@ export default function AdminProducts() {
   const utils = trpc.useUtils();
   const { data: products, isLoading } = trpc.admin.products.useQuery({ search: search || undefined });
   const del = trpc.admin.deleteProduct.useMutation({
-    onSuccess: () => {
-      utils.admin.products.invalidate();
-      toast.success("Product deleted");
+    onSuccess: async (result) => {
+      await Promise.all([
+        utils.admin.products.invalidate(),
+        utils.admin.stats.invalidate(),
+        utils.shop.products.invalidate(),
+        utils.shop.productBySlug.invalidate(),
+      ]);
+      toast.success(result.archived ? "Product hidden; order history was preserved" : "Product deleted");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -99,6 +104,7 @@ export default function AdminProducts() {
                       <button
                         className="p-2 hover:text-red-600"
                         aria-label={`Delete ${p.name}`}
+                        disabled={del.isPending}
                         onClick={() => {
                           if (confirm(`Delete "${p.name}"?`)) del.mutate({ id: p.id });
                         }}

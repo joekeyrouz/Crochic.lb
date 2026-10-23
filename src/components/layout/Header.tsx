@@ -62,7 +62,7 @@ export function Header() {
           {/* desktop nav left */}
           <nav className="hidden lg:flex items-center gap-8 text-[13px] tracking-[0.14em] uppercase">
             {NAV.slice(0, 3).map((n) => (
-              <NavLink key={n.to} to={n.to} className="link-underline">
+              <NavLink key={n.label} to={n.to} className="link-underline">
                 {n.label}
               </NavLink>
             ))}
@@ -78,7 +78,7 @@ export function Header() {
           <div className="flex items-center gap-1 lg:gap-2">
             <nav className="hidden lg:flex items-center gap-8 mr-6 text-[13px] tracking-[0.14em] uppercase">
               {NAV.slice(3).map((n) => (
-                <NavLink key={n.to} to={n.to} className="link-underline">
+                <NavLink key={n.label} to={n.to} className="link-underline">
                   {n.label}
                 </NavLink>
               ))}
@@ -161,7 +161,7 @@ export function Header() {
                   { to: "/login", label: "Sign in" },
                 ].map((n) => (
                   <NavLink
-                    key={n.to}
+                    key={n.label}
                     to={n.to}
                     onClick={() => setMobileOpen(false)}
                     className="hover:text-crochic-rose transition-colors"

@@ -1,9 +1,11 @@
 import { Link } from "react-router";
 import { Instagram, MessageCircle } from "lucide-react";
 import { useSettings, whatsappLink } from "@/lib/shop";
+import { trpc } from "@/providers/trpc";
 
 export function Footer() {
   const { get } = useSettings();
+  const { data: categories } = trpc.shop.categories.useQuery();
   const year = new Date().getFullYear();
   return (
     <footer className="bg-crochic-dark text-crochic-cream/90 mt-24">
@@ -51,30 +53,16 @@ export function Footer() {
                 All pieces
               </Link>
             </li>
-            <li>
-              <Link
-                className="hover:text-crochic-blush transition-colors"
-                to="/shop/lip-balm-charms"
-              >
-                Lip Balm Charms
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="hover:text-crochic-blush transition-colors"
-                to="/shop/little-bags"
-              >
-                Little Bags
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="hover:text-crochic-blush transition-colors"
-                to="/shop/keychains-charms"
-              >
-                Keychains &amp; Charms
-              </Link>
-            </li>
+            {categories?.map((category) => (
+              <li key={category.id}>
+                <Link
+                  className="hover:text-crochic-blush transition-colors"
+                  to={`/shop/${category.slug}`}
+                >
+                  {category.name}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
         <div>
