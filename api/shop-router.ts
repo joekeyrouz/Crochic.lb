@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { and, asc, desc, eq, like, or, sql, gte, lte } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
   categories,
@@ -103,14 +103,14 @@ export const shopRouter = createRouter({
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
       const product = await getDb().query.products.findFirst({
-        where: and(
-          eq(products.slug, input.slug),
-          eq(products.active, true),
-        ),
+        where: and(eq(products.slug, input.slug), eq(products.active, true)),
         with: withImages,
       });
       if (!product)
-        throw new TRPCError({ code: "NOT_FOUND", message: "Product not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Product not found",
+        });
       const related = await getDb().query.products.findMany({
         where: and(
           eq(products.categoryId, product.categoryId),
@@ -153,7 +153,9 @@ export const shopRouter = createRouter({
           notes: z.string().optional(),
         }),
         items: z
-          .array(z.object({ productId: z.number(), quantity: z.number().min(1) }))
+          .array(
+            z.object({ productId: z.number(), quantity: z.number().min(1) }),
+          )
           .min(1),
       }),
     )
@@ -170,7 +172,10 @@ export const shopRouter = createRouter({
       const dbProducts = await db.query.products.findMany({
         where: and(
           eq(products.active, true),
-          sql`${products.id} IN (${sql.join(ids.map((id) => sql`${id}`), sql`, `)})`,
+          sql`${products.id} IN (${sql.join(
+            ids.map((id) => sql`${id}`),
+            sql`, `,
+          )})`,
         ),
       });
       if (dbProducts.length !== ids.length)
@@ -187,7 +192,12 @@ export const shopRouter = createRouter({
             message: `"${p.name}" has only ${p.stock} left in stock.`,
           });
         const unit = Number(p.salePrice ?? p.price);
-        return { product: p, quantity: item.quantity, unit, total: unit * item.quantity };
+        return {
+          product: p,
+          quantity: item.quantity,
+          unit,
+          total: unit * item.quantity,
+        };
       });
 
       const subtotal = lines.reduce((s, l) => s + l.total, 0);
@@ -261,4 +271,62 @@ export const shopRouter = createRouter({
         deliveryMessage: settings.delivery_message,
       };
     }),
+
+  myOrders: authedQuery.query(async ({ ctx }) => {
+    const email = ctx.user.email?.toLowerCase().trim();
+    if (!email) return [];
+
+    const db = getDb();
+    const userCustomers = await db.query.customers.findMany({
+      where: eq(customers.email, email),
+      columns: { id: true },
+    });
+
+    if (userCustomers.length === 0) return [];
+
+    const customerIds = userCustomers.map((c) => c.id);
+
+    const userOrders = await db.query.orders.findMany({
+      where: sql`${orders.customerId} IN (${sql.join(
+        customerIds.map((id) => sql`${id}`),
+        sql`, `,
+      )})`,
+      orderBy: desc(orders.createdAt),
+      with: {
+        customer: true,
+        items: true,
+        statusHistory: {
+          orderBy: desc(orderStatusHistory.createdAt),
+        },
+      },
+    });
+
+    const productIds = Array.from(
+      new Set(userOrders.flatMap((o) => o.items.map((i) => i.productId))),
+    );
+
+    const imagesMap: Record<number, string> = {};
+    if (productIds.length > 0) {
+      const imgs = await db.query.productImages.findMany({
+        where: and(
+          sql`${productImages.productId} IN (${sql.join(
+            productIds.map((id) => sql`${id}`),
+            sql`, `,
+          )})`,
+          eq(productImages.isPrimary, true),
+        ),
+      });
+      for (const img of imgs) {
+        imagesMap[img.productId] = img.url;
+      }
+    }
+
+    return userOrders.map((order) => ({
+      ...order,
+      items: order.items.map((item) => ({
+        ...item,
+        imageUrl: imagesMap[item.productId] ?? null,
+      })),
+    }));
+  }),
 });

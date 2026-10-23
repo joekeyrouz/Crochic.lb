@@ -4,6 +4,7 @@ import {
   Heart,
   LogOut,
   Menu,
+  Package,
   Search,
   ShieldCheck,
   ShoppingBag,
@@ -139,6 +140,15 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="my-1 bg-crochic-blush/60" />
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to="/my-orders"
+                      className="cursor-pointer flex items-center gap-2 text-crochic-dark text-xs py-2"
+                    >
+                      <Package className="w-4 h-4 text-crochic-rose" />
+                      <span>My Orders</span>
+                    </Link>
+                  </DropdownMenuItem>
                   {user.role === "admin" && (
                     <DropdownMenuItem asChild>
                       <Link
@@ -255,6 +265,13 @@ export function Header() {
                         </p>
                       </div>
                     </div>
+                    <Link
+                      to="/my-orders"
+                      onClick={() => setMobileOpen(false)}
+                      className="text-crochic-dark hover:text-crochic-rose py-1 flex items-center gap-2 text-xs font-medium"
+                    >
+                      <Package className="w-4 h-4 text-crochic-rose" /> My Orders
+                    </Link>
                     {user.role === "admin" && (
                       <Link
                         to="/admin"

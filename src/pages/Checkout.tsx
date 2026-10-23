@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/hooks/useAuth";
 import { formatPrice, useSettings } from "@/lib/shop";
 
 const FIELDS = [
@@ -29,8 +30,19 @@ export default function Checkout() {
   const { get } = useSettings();
   const currency = get("currency", "USD");
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [form, setForm] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setForm((prev) => ({
+        ...prev,
+        name: prev.name || user.name || "",
+        email: prev.email || user.email || "",
+      }));
+    }
+  }, [user]);
 
   const checkout = trpc.shop.checkout.useMutation({
     onSuccess: (data) => {

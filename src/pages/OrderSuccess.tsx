@@ -68,6 +68,12 @@ export default function OrderSuccess() {
             <MessageCircle className="w-4 h-4" /> Message us
           </a>
           <Link
+            to="/my-orders"
+            className="inline-flex items-center justify-center gap-2 border border-crochic-blush px-8 py-4 text-xs uppercase tracking-[0.2em] hover:bg-crochic-blush/30 transition-colors"
+          >
+            Track in My Orders
+          </Link>
+          <Link
             to="/shop"
             className="bg-crochic-dark text-crochic-cream px-8 py-4 text-xs uppercase tracking-[0.2em] hover:bg-crochic-rose transition-colors"
           >
