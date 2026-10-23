@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { formatPrice } from "@/lib/shop";
 import { StatusBadge } from "./Dashboard";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const STATUSES = [
   "pending",
@@ -19,14 +21,32 @@ export default function AdminOrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const utils = trpc.useUtils();
+  const [alert, setAlert] = useState<{
+    variant: "success" | "destructive";
+    title: string;
+    message: string;
+  } | null>(null);
+
   const { data } = trpc.admin.order.useQuery({ id: Number(id) });
   const update = trpc.admin.updateOrderStatus.useMutation({
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       utils.admin.order.invalidate();
       utils.admin.orders.invalidate();
+      setAlert({
+        variant: "success",
+        title: "Order Status Updated",
+        message: `Order status has been updated to "${variables.status}".`,
+      });
       toast.success("Status updated");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => {
+      setAlert({
+        variant: "destructive",
+        title: "Update Failed",
+        message: e.message,
+      });
+      toast.error(e.message);
+    },
   });
 
   if (!data) return null;

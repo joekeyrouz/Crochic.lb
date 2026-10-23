@@ -4,13 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+  "relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current transition-all",
   {
     variants: {
       variant: {
-        default: "bg-card text-card-foreground",
+        default: "bg-card text-card-foreground border-border",
         destructive:
-          "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90",
+          "text-destructive border-destructive/30 bg-destructive/5 [&>svg]:text-destructive *:data-[slot=alert-description]:text-destructive/90",
+        success:
+          "text-emerald-900 border-emerald-300 bg-emerald-50 [&>svg]:text-emerald-700 *:data-[slot=alert-description]:text-emerald-800",
+        warning:
+          "text-amber-900 border-amber-300 bg-amber-50 [&>svg]:text-amber-700 *:data-[slot=alert-description]:text-amber-800",
       },
     },
     defaultVariants: {

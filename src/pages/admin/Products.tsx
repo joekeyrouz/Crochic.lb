@@ -1,13 +1,31 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { formatPrice } from "@/lib/shop";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminProducts() {
   const [search, setSearch] = useState("");
+  const [productToDelete, setProductToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [alert, setAlert] = useState<{
+    variant: "success" | "destructive";
+    title: string;
+    message: string;
+  } | null>(null);
+
   const utils = trpc.useUtils();
   const { data: products, isLoading } = trpc.admin.products.useQuery({ search: search || undefined });
   const del = trpc.admin.deleteProduct.useMutation({
@@ -18,9 +36,25 @@ export default function AdminProducts() {
         utils.shop.products.invalidate(),
         utils.shop.productBySlug.invalidate(),
       ]);
-      toast.success(result.archived ? "Product hidden; order history was preserved" : "Product deleted");
+      setProductToDelete(null);
+      setAlert({
+        variant: "success",
+        title: "Product Deleted",
+        message: result.archived
+          ? "Product hidden from boutique; order history was preserved."
+          : "Product has been permanently deleted.",
+      });
+      toast.success(result.archived ? "Product hidden" : "Product deleted");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => {
+      setProductToDelete(null);
+      setAlert({
+        variant: "destructive",
+        title: "Deletion Failed",
+        message: e.message,
+      });
+      toast.error(e.message);
+    },
   });
 
   return (
@@ -34,6 +68,27 @@ export default function AdminProducts() {
           <Plus className="w-4 h-4" /> New product
         </Link>
       </div>
+
+      {alert && (
+        <div className="mb-6">
+          <Alert variant={alert.variant} className="relative pr-10">
+            {alert.variant === "success" ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <AlertCircle className="w-4 h-4" />
+            )}
+            <AlertTitle>{alert.title}</AlertTitle>
+            <AlertDescription>{alert.message}</AlertDescription>
+            <button
+              onClick={() => setAlert(null)}
+              className="absolute top-3 right-3 p-1 text-muted-foreground hover:text-foreground rounded-sm"
+              aria-label="Dismiss alert"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </Alert>
+        </div>
+      )}
       <input
         type="search"
         placeholder="Search by name or SKU…"
@@ -105,9 +160,7 @@ export default function AdminProducts() {
                         className="p-2 hover:text-red-600"
                         aria-label={`Delete ${p.name}`}
                         disabled={del.isPending}
-                        onClick={() => {
-                          if (confirm(`Delete "${p.name}"?`)) del.mutate({ id: p.id });
-                        }}
+                        onClick={() => setProductToDelete({ id: p.id, name: p.name })}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -122,6 +175,41 @@ export default function AdminProducts() {
           )}
         </div>
       )}
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog
+        open={Boolean(productToDelete)}
+        onOpenChange={(open) => !open && setProductToDelete(null)}
+      >
+        <AlertDialogContent className="bg-white border-crochic-blush">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-2xl text-crochic-dark">
+              Delete Product
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-crochic-muted">
+              Are you sure you want to delete{" "}
+              <strong className="text-crochic-dark">{productToDelete?.name}</strong>?
+              If this product has existing customer orders, it will be hidden instead of permanently removed to preserve order history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-crochic-blush text-crochic-dark">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={() => {
+                if (productToDelete) {
+                  del.mutate({ id: productToDelete.id });
+                }
+              }}
+              disabled={del.isPending}
+            >
+              {del.isPending ? "Deleting…" : "Delete Product"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
