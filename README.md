@@ -13,8 +13,7 @@ can access admin APIs.
 2. In Google Cloud Console, create a Web OAuth client. Add
    `http://localhost:3000/api/auth/google/callback` as an authorized redirect URI.
    Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`.
-3. Create a Resend account, verify a sender domain/address, and set
-   `RESEND_API_KEY` and `EMAIL_FROM` (for example, `CroChic <login@your-domain>`).
+3. Set `SMTP_USER` and `SMTP_PASS` in `.env` (for example, your Gmail and Google App Password) for sending OTP emails.
 4. Generate a private session key with
    `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
    and set the output as `SESSION_SECRET`.

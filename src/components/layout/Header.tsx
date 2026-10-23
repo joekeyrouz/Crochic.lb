@@ -1,9 +1,27 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
-import { Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import {
+  Heart,
+  LogOut,
+  Menu,
+  Search,
+  ShieldCheck,
+  ShoppingBag,
+  User,
+  X,
+} from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { useSettings } from "@/lib/shop";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -30,6 +48,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { count, openCart } = useCart();
   const { get } = useSettings();
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -90,13 +109,65 @@ export function Header() {
             >
               <Search className="w-[18px] h-[18px]" />
             </button>
-            <Link
-              to="/login"
-              className="hidden lg:block p-2 hover:text-crochic-rose transition-colors"
-              aria-label="Account"
-            >
-              <User className="w-[18px] h-[18px]" />
-            </Link>
+            {isAuthenticated && user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="hidden lg:flex items-center gap-2 p-1.5 hover:text-crochic-rose transition-colors rounded-full"
+                    aria-label="Account menu"
+                  >
+                    <span className="w-7 h-7 rounded-full bg-crochic-blush text-crochic-dark flex items-center justify-center font-semibold text-xs uppercase shadow-sm">
+                      {user.name?.[0] || user.email?.[0] || "U"}
+                    </span>
+                    <span className="max-w-[100px] truncate text-xs font-medium hidden xl:inline text-crochic-dark">
+                      {user.name || user.email?.split("@")[0]}
+                    </span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-white shadow-xl border-crochic-blush p-2"
+                >
+                  <DropdownMenuLabel className="font-normal px-2 py-1.5">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none text-crochic-dark">
+                        {user.name || "Customer"}
+                      </p>
+                      <p className="text-xs leading-none text-crochic-muted truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="my-1 bg-crochic-blush/60" />
+                  {user.role === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to="/admin"
+                        className="cursor-pointer flex items-center gap-2 text-crochic-dark text-xs py-2"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-crochic-rose" />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => logout()}
+                    className="cursor-pointer text-destructive focus:text-destructive flex items-center gap-2 text-xs py-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                to="/login"
+                className="hidden lg:block p-2 hover:text-crochic-rose transition-colors"
+                aria-label="Account"
+              >
+                <User className="w-[18px] h-[18px]" />
+              </Link>
+            )}
             <button
               className="relative p-2 hover:text-crochic-rose transition-colors"
               onClick={openCart}
@@ -158,7 +229,6 @@ export function Header() {
                   { to: "/", label: "Home" },
                   ...NAV,
                   { to: "/search", label: "Search" },
-                  { to: "/login", label: "Sign in" },
                 ].map((n) => (
                   <NavLink
                     key={n.label}
@@ -169,6 +239,50 @@ export function Header() {
                     {n.label}
                   </NavLink>
                 ))}
+
+                {isAuthenticated && user ? (
+                  <div className="pt-4 mt-2 border-t border-crochic-blush flex flex-col gap-3 font-sans text-sm">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-8 h-8 rounded-full bg-crochic-blush text-crochic-dark flex items-center justify-center font-bold text-xs uppercase">
+                        {user.name?.[0] || user.email?.[0] || "U"}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-medium text-crochic-dark truncate">
+                          {user.name || "Customer"}
+                        </p>
+                        <p className="text-xs text-crochic-muted truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                    {user.role === "admin" && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setMobileOpen(false)}
+                        className="text-crochic-rose hover:underline py-1 flex items-center gap-2 text-xs font-medium"
+                      >
+                        <ShieldCheck className="w-4 h-4" /> Admin Dashboard
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => {
+                        setMobileOpen(false);
+                        logout();
+                      }}
+                      className="text-left text-destructive hover:underline py-1 flex items-center gap-2 text-xs font-medium"
+                    >
+                      <LogOut className="w-4 h-4" /> Sign out
+                    </button>
+                  </div>
+                ) : (
+                  <NavLink
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="hover:text-crochic-rose transition-colors"
+                  >
+                    Sign in
+                  </NavLink>
+                )}
               </nav>
               <div className="mt-auto text-xs text-crochic-muted flex items-center gap-2">
                 <Heart className="w-3.5 h-3.5 text-crochic-rose" />

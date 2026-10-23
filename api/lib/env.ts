@@ -1,4 +1,7 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "node:path";
+
+dotenv.config({ path: path.resolve(process.cwd(), ".env"), override: true });
 
 function required(name: string): string {
   const value = process.env[name];
@@ -9,11 +12,25 @@ function required(name: string): string {
 }
 
 export const env = {
-  isProduction: process.env.NODE_ENV === "production",
-  databaseUrl: required("DATABASE_URL"),
-  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-  resendApiKey: process.env.RESEND_API_KEY ?? "",
-  emailFrom: process.env.EMAIL_FROM ?? "",
-  sessionSecret: required("SESSION_SECRET"),
+  get isProduction() {
+    return process.env.NODE_ENV === "production";
+  },
+  get databaseUrl() {
+    return required("DATABASE_URL");
+  },
+  get googleClientId() {
+    return process.env.GOOGLE_CLIENT_ID ?? "";
+  },
+  get googleClientSecret() {
+    return process.env.GOOGLE_CLIENT_SECRET ?? "";
+  },
+  get sessionSecret() {
+    return required("SESSION_SECRET");
+  },
+  get smtpUser() {
+    return process.env.SMTP_USER ?? "";
+  },
+  get smtpPass() {
+    return process.env.SMTP_PASS ?? "";
+  },
 };

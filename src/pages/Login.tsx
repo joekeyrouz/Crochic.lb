@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/providers/trpc";
+import { useAuth } from "@/hooks/useAuth";
 
 const LOGIN_ERRORS: Record<string, string> = {
   google_not_configured:
@@ -29,6 +30,7 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const utils = trpc.useUtils();
+  const { user, isAuthenticated, logout } = useAuth();
   const requestCode = trpc.auth.requestEmailOtp.useMutation({
     onSuccess: () => {
       setCodeSent(true);
@@ -40,8 +42,9 @@ export default function Login() {
   });
   const verifyCode = trpc.auth.verifyEmailOtp.useMutation({
     onSuccess: async () => {
+      await utils.auth.me.invalidate();
       await utils.invalidate();
-      navigate("/", { replace: true });
+      window.location.href = "/";
     },
   });
 
@@ -58,6 +61,52 @@ export default function Login() {
     } else {
       requestCode.mutate({ email });
     }
+  }
+
+  if (isAuthenticated && user) {
+    return (
+      <main className="min-h-screen bg-crochic-cream flex items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-md border-crochic-blush/50 shadow-xl">
+          <CardHeader className="text-center space-y-3">
+            <Link
+              to="/"
+              className="font-display text-3xl font-medium tracking-tight text-crochic-dark"
+            >
+              Cro<span className="italic text-crochic-rose">Chic</span>
+            </Link>
+            <CardTitle className="font-display text-2xl">Signed In</CardTitle>
+            <p className="text-sm text-crochic-muted">
+              You are signed in as{" "}
+              <strong className="text-crochic-dark">{user.email}</strong>.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              className="w-full bg-crochic-dark text-crochic-cream hover:bg-crochic-rose"
+              onClick={() => navigate("/")}
+            >
+              Continue to store
+            </Button>
+            {user.role === "admin" && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate("/admin")}
+              >
+                Go to admin dashboard
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              className="w-full text-destructive hover:text-destructive"
+              onClick={() => logout()}
+            >
+              Sign out
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
   }
 
   return (
