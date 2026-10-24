@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { AlertCircle, ArrowLeft, CheckCircle2, X } from "lucide-react";
-import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { formatPrice } from "@/lib/shop";
 import { StatusBadge } from "./Dashboard";
@@ -37,7 +36,6 @@ export default function AdminOrderDetail() {
         title: "Order Status Updated",
         message: `Order status has been updated to "${variables.status}".`,
       });
-      toast.success("Status updated");
     },
     onError: (e) => {
       setAlert({
@@ -45,7 +43,6 @@ export default function AdminOrderDetail() {
         title: "Update Failed",
         message: e.message,
       });
-      toast.error(e.message);
     },
   });
 
@@ -64,6 +61,28 @@ export default function AdminOrderDetail() {
         <h1 className="font-display text-4xl">{order.orderNumber}</h1>
         <StatusBadge status={order.status} />
       </div>
+
+      {alert && (
+        <div className="mb-6">
+          <Alert variant={alert.variant} className="relative pr-10">
+            {alert.variant === "success" ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <AlertCircle className="w-4 h-4" />
+            )}
+            <AlertTitle>{alert.title}</AlertTitle>
+            <AlertDescription>{alert.message}</AlertDescription>
+            <button
+              type="button"
+              onClick={() => setAlert(null)}
+              className="absolute top-3 right-3 p-1 text-muted-foreground hover:text-foreground rounded-sm"
+              aria-label="Dismiss alert"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </Alert>
+        </div>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-6 mb-8">
         <div className="bg-crochic-ivory border border-crochic-blush p-6">

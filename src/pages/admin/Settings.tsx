@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import { trpc } from "@/providers/trpc";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const FIELDS: { key: string; label: string; hint?: string }[] = [
   { key: "brand_name", label: "Brand name" },
@@ -23,6 +24,11 @@ export default function AdminSettings() {
   const { data: settings } = trpc.admin.settings.useQuery();
   const [form, setForm] = useState<Record<string, string>>({});
   const [deliveryEnabled, setDeliveryEnabled] = useState(false);
+  const [alert, setAlert] = useState<{
+    variant: "success" | "destructive";
+    title: string;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (settings) {
@@ -35,9 +41,18 @@ export default function AdminSettings() {
     onSuccess: () => {
       utils.admin.settings.invalidate();
       utils.shop.settings.invalidate();
-      toast.success("Settings saved — the boutique is updated");
+      setAlert({
+        variant: "success",
+        title: "Settings Saved",
+        message: "Settings saved — the boutique is updated.",
+      });
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) =>
+      setAlert({
+        variant: "destructive",
+        title: "Save Failed",
+        message: e.message,
+      }),
   });
 
   const input =
@@ -46,6 +61,28 @@ export default function AdminSettings() {
   return (
     <div className="max-w-2xl">
       <h1 className="font-display text-4xl mb-8">Settings</h1>
+
+      {alert && (
+        <div className="mb-6">
+          <Alert variant={alert.variant} className="relative pr-10">
+            {alert.variant === "success" ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <AlertCircle className="w-4 h-4" />
+            )}
+            <AlertTitle>{alert.title}</AlertTitle>
+            <AlertDescription>{alert.message}</AlertDescription>
+            <button
+              type="button"
+              onClick={() => setAlert(null)}
+              className="absolute top-3 right-3 p-1 text-muted-foreground hover:text-foreground rounded-sm"
+              aria-label="Dismiss alert"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </Alert>
+        </div>
+      )}
       <div className="bg-crochic-ivory border border-crochic-blush p-6 space-y-5">
         {FIELDS.map((f) => (
           <div key={f.key}>

@@ -7,7 +7,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -73,7 +72,6 @@ export default function AdminCategories() {
           : `Collection "${form.name}" has been created.`,
       });
       resetForm();
-      toast.success(editing ? "Collection updated" : "Collection saved");
     },
     onError: (e) => {
       setAlert({
@@ -81,7 +79,6 @@ export default function AdminCategories() {
         title: "Could Not Save Collection",
         message: e.message,
       });
-      toast.error(e.message);
     },
   });
 
@@ -98,7 +95,6 @@ export default function AdminCategories() {
         title: "Collection Deleted",
         message: "The collection has been deleted. Assigned products are now unassigned.",
       });
-      toast.success("Collection deleted");
     },
     onError: (e) => {
       setCategoryToDelete(null);
@@ -107,7 +103,6 @@ export default function AdminCategories() {
         title: "Deletion Failed",
         message: e.message,
       });
-      toast.error(e.message);
     },
   });
 
@@ -154,7 +149,6 @@ export default function AdminCategories() {
                 title: "Validation Error",
                 message: "Collection name must be at least 2 characters.",
               });
-              toast.error("Collection name must be at least 2 characters.");
               return;
             }
             save.mutate({

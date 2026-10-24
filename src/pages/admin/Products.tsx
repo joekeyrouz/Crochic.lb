@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { AlertCircle, CheckCircle2, Pencil, Plus, Trash2, X } from "lucide-react";
-import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { formatPrice } from "@/lib/shop";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,7 +43,6 @@ export default function AdminProducts() {
           ? "Product hidden from boutique; order history was preserved."
           : "Product has been permanently deleted.",
       });
-      toast.success(result.archived ? "Product hidden" : "Product deleted");
     },
     onError: (e) => {
       setProductToDelete(null);
@@ -53,7 +51,6 @@ export default function AdminProducts() {
         title: "Deletion Failed",
         message: e.message,
       });
-      toast.error(e.message);
     },
   });
 

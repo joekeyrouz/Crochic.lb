@@ -9,7 +9,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -132,9 +131,6 @@ export default function AdminProductEdit() {
         message:
           "Paste an image path or URL, or choose a photo from the library.",
       });
-      toast.error(
-        "Paste an image path or URL, or choose a photo from the library.",
-      );
       return;
     }
     if (images.includes(image)) {
@@ -143,7 +139,6 @@ export default function AdminProductEdit() {
         title: "Duplicate Image",
         message: "This image is already included in the gallery.",
       });
-      toast.info("This image is already in the product gallery.");
       return;
     }
     setImages((current) => [...current, image]);
@@ -153,7 +148,6 @@ export default function AdminProductEdit() {
       title: "Image Added",
       message: "Image added to gallery. Click Save product to store changes.",
     });
-    toast.success("Image added. Save the product to keep your changes.");
   };
 
   const uploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +159,6 @@ export default function AdminProductEdit() {
         title: "File Too Large",
         message: "Uploaded image must be 5 MB or smaller.",
       });
-      toast.error("Image must be 5 MB or smaller.");
       event.target.value = "";
       return;
     }
@@ -191,7 +184,6 @@ export default function AdminProductEdit() {
         message:
           "Image uploaded successfully. Save the product to persist changes.",
       });
-      toast.success("Image uploaded. Save the product to keep your changes.");
     } catch (error) {
       setAlert({
         variant: "destructive",
@@ -199,9 +191,6 @@ export default function AdminProductEdit() {
         message:
           error instanceof Error ? error.message : "Image upload failed.",
       });
-      toast.error(
-        error instanceof Error ? error.message : "Image upload failed.",
-      );
     } finally {
       setIsUploading(false);
       event.target.value = "";
@@ -216,7 +205,6 @@ export default function AdminProductEdit() {
         message:
           "Name, SKU, collection, and price are required to save this product.",
       });
-      toast.error("Name, SKU, collection and price are required.");
       return;
     }
     const payload = {
@@ -243,7 +231,6 @@ export default function AdminProductEdit() {
           ? `Product "${form.name}" has been created successfully.`
           : `All updates to "${form.name}" have been saved.`,
       });
-      toast.success(isNew ? "Product created" : "Product saved");
       if (isNew) navigate(`/admin/products/${res.id}`);
     } catch (e) {
       setAlert({
@@ -251,7 +238,6 @@ export default function AdminProductEdit() {
         title: "Save Failed",
         message: e instanceof Error ? e.message : "Failed to save product.",
       });
-      toast.error(e instanceof Error ? e.message : "Save failed");
     }
   };
 

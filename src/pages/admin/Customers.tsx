@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { Pencil, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { AlertCircle, CheckCircle2, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +53,11 @@ export default function AdminCustomers() {
   );
   const [deletingCustomer, setDeletingCustomer] =
     useState<CustomerRecord | null>(null);
+  const [alert, setAlert] = useState<{
+    variant: "success" | "destructive";
+    title: string;
+    message: string;
+  } | null>(null);
   const [form, setForm] = useState<CustomerForm>(EMPTY_FORM);
   const utils = trpc.useUtils();
   const {
@@ -71,18 +76,36 @@ export default function AdminCustomers() {
         utils.admin.order.invalidate(),
       ]);
       setEditingCustomer(null);
-      toast.success("Customer details updated");
+      setAlert({
+        variant: "success",
+        title: "Customer Updated",
+        message: "Customer details have been updated.",
+      });
     },
-    onError: (mutationError) => toast.error(mutationError.message),
+    onError: (mutationError) =>
+      setAlert({
+        variant: "destructive",
+        title: "Update Failed",
+        message: mutationError.message,
+      }),
   });
 
   const deleteCustomer = trpc.admin.deleteCustomer.useMutation({
     onSuccess: async () => {
       await utils.admin.customers.invalidate();
       setDeletingCustomer(null);
-      toast.success("Customer deleted");
+      setAlert({
+        variant: "success",
+        title: "Customer Deleted",
+        message: "Customer has been deleted.",
+      });
     },
-    onError: (mutationError) => toast.error(mutationError.message),
+    onError: (mutationError) =>
+      setAlert({
+        variant: "destructive",
+        title: "Deletion Failed",
+        message: mutationError.message,
+      }),
   });
 
   function openEditor(customer: CustomerRecord) {
@@ -116,6 +139,28 @@ export default function AdminCustomers() {
       <h1 className="mb-6 font-display text-3xl sm:mb-8 sm:text-4xl">
         Customers
       </h1>
+
+      {alert && (
+        <div className="mb-6">
+          <Alert variant={alert.variant} className="relative pr-10">
+            {alert.variant === "success" ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <AlertCircle className="w-4 h-4" />
+            )}
+            <AlertTitle>{alert.title}</AlertTitle>
+            <AlertDescription>{alert.message}</AlertDescription>
+            <button
+              type="button"
+              onClick={() => setAlert(null)}
+              className="absolute top-3 right-3 p-1 text-muted-foreground hover:text-foreground rounded-sm"
+              aria-label="Dismiss alert"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </Alert>
+        </div>
+      )}
       <input
         type="search"
         aria-label="Search customers by name or email"
