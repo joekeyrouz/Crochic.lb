@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { getDb } from "../api/queries/connection";
 import {
   categories,
@@ -5,10 +6,30 @@ import {
   productImages,
   siteSettings,
   reviews,
+  users,
 } from "./schema";
 
 async function seed() {
   const db = getDb();
+
+  const existingAdmin = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, "crochic2@gmail.com"))
+    .limit(1);
+
+  if (existingAdmin.length === 0) {
+    await db.insert(users).values({
+      unionId: "local-crochic2-admin",
+      name: "CroChic Admin",
+      email: "crochic2@gmail.com",
+      role: "admin",
+    });
+
+    console.log("Admin user created.");
+  } else {
+    console.log("Admin user already exists — skipping.");
+  }
 
   const existing = await db.select().from(categories).limit(1);
   if (existing.length > 0) {
@@ -55,6 +76,7 @@ async function seed() {
     for (const row of rows) {
       const [{ id }] = await db.insert(products).values(row).$returningId();
       const imgs = images[row.slug] ?? [];
+
       for (let i = 0; i < imgs.length; i++) {
         await db.insert(productImages).values({
           productId: id,
