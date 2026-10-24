@@ -8,21 +8,28 @@ import {
   reviews,
   users,
 } from "./schema";
+import "dotenv";
 
 async function seed() {
   const db = getDb();
 
+  const adminEmail = process.env.ADMIN_EMAIL;
+
+  if (!adminEmail) {
+    throw new Error("ADMIN_EMAIL is missing from .env");
+  }
+
   const existingAdmin = await db
     .select()
     .from(users)
-    .where(eq(users.email, "crochic2@gmail.com"))
+    .where(eq(users.email, adminEmail))
     .limit(1);
 
   if (existingAdmin.length === 0) {
     await db.insert(users).values({
       unionId: "local-crochic2-admin",
       name: "CroChic Admin",
-      email: "crochic2@gmail.com",
+      email: adminEmail,
       role: "admin",
     });
 
