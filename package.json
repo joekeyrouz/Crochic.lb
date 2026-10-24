@@ -15,7 +15,8 @@
     "admin:set-password": "node scripts/set-admin-password.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx db/seed.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "2.0.78",
