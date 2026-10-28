@@ -1,0 +1,26 @@
+[
+  {
+    "id": 4,
+    "customerName": "Salma R.",
+    "review": "The little bow holder is even prettier in person. You can tell every stitch was made with care — I get asked about it constantly.",
+    "rating": 5,
+    "approved": 1,
+    "createdAt": "2026-10-24T19:33:04.000Z"
+  },
+  {
+    "id": 5,
+    "customerName": "Yasmin K.",
+    "review": "Ordered the charm trio as gifts and ended up keeping one for myself. The packaging alone felt like a present.",
+    "rating": 5,
+    "approved": 1,
+    "createdAt": "2026-10-24T19:33:04.000Z"
+  },
+  {
+    "id": 6,
+    "customerName": "Nour A.",
+    "review": "My sunflower tote is my favourite thing I own. Soft, sturdy, and completely unique. Worth every stitch.",
+    "rating": 5,
+    "approved": 1,
+    "createdAt": "2026-10-24T19:33:04.000Z"
+  }
+]

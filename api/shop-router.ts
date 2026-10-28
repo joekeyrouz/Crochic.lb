@@ -129,6 +129,95 @@ export const shopRouter = createRouter({
       orderBy: desc(reviews.createdAt),
     });
   }),
+  submitReview: authedQuery
+    .input(
+      z.object({
+        orderItemId: z.number().int().positive(),
+        rating: z.number().int().min(1).max(5),
+        review: z.string().trim().min(3).max(2000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const email = ctx.user.email?.toLowerCase().trim();
+
+      if (!email) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "Your account must have an email address to submit a review.",
+        });
+      }
+
+      const db = getDb();
+
+      const matchingCustomers = await db.query.customers.findMany({
+        where: eq(customers.email, email),
+        columns: { id: true, name: true },
+      });
+
+      if (matchingCustomers.length === 0) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You must purchase this item before reviewing it.",
+        });
+      }
+
+      const item = await db.query.orderItems.findFirst({
+        where: eq(orderItems.id, input.orderItemId),
+        with: { order: true },
+      });
+
+      if (
+        !item ||
+        !matchingCustomers.some(
+          (customer) => customer.id === item.order.customerId,
+        )
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not allowed to review this order item.",
+        });
+      }
+
+      if (item.order.status !== "delivered") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can review an item only after its order is delivered.",
+        });
+      }
+
+      const customer = matchingCustomers.find(
+        (entry) => entry.id === item.order.customerId,
+      )!;
+
+      const existingReview = await db.query.reviews.findFirst({
+        where: eq(reviews.orderItemId, item.id),
+      });
+
+      const reviewData = {
+        customerId: customer.id,
+        customerName: customer.name,
+        rating: input.rating,
+        review: input.review,
+        approved: false,
+      };
+
+      if (existingReview) {
+        await db
+          .update(reviews)
+          .set(reviewData)
+          .where(eq(reviews.id, existingReview.id));
+
+        return { success: true, updated: true };
+      }
+
+      await db.insert(reviews).values({
+        orderItemId: item.id,
+        ...reviewData,
+      });
+
+      return { success: true, updated: false };
+    }),
 
   subscribe: publicQuery
     .input(z.object({ email: z.string().email() }))
@@ -300,7 +389,25 @@ export const shopRouter = createRouter({
         },
       },
     });
+    const orderItemIds = userOrders.flatMap((order) =>
+      order.items.map((item) => item.id),
+    );
 
+    const orderItemReviews =
+      orderItemIds.length > 0
+        ? await db.query.reviews.findMany({
+            where: sql`${reviews.orderItemId} IN (${sql.join(
+              orderItemIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})`,
+          })
+        : [];
+
+    const reviewsByOrderItemId = new Map(
+      orderItemReviews
+        .filter((review) => review.orderItemId !== null)
+        .map((review) => [review.orderItemId!, review]),
+    );
     const productIds = Array.from(
       new Set(userOrders.flatMap((o) => o.items.map((i) => i.productId))),
     );
@@ -326,6 +433,7 @@ export const shopRouter = createRouter({
       items: order.items.map((item) => ({
         ...item,
         imageUrl: imagesMap[item.productId] ?? null,
+        review: reviewsByOrderItemId.get(item.id) ?? null,
       })),
     }));
   }),

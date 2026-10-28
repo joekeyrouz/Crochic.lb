@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package,
@@ -100,9 +101,16 @@ export default function MyOrders() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { get } = useSettings();
   const currency = get("currency", "USD");
-  const [expandedOrders, setExpandedOrders] = useState<Record<number, boolean>>({});
+
+  const [expandedOrders, setExpandedOrders] = useState<Record<number, boolean>>(
+    {},
+  );
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [reviewForms, setReviewForms] = useState<
+    Record<number, { rating: number; review: string }>
+  >({});
 
   const {
     data: orders = [],
@@ -111,6 +119,20 @@ export default function MyOrders() {
     isRefetching,
   } = trpc.shop.myOrders.useQuery(undefined, {
     enabled: Boolean(isAuthenticated && user),
+  });
+
+  const submitReview = trpc.shop.submitReview.useMutation({
+    onSuccess: (result) => {
+      toast.success(
+        result.updated
+          ? "Your review was updated and is awaiting approval."
+          : "Your review was submitted and is awaiting approval.",
+      );
+
+      setReviewForms({});
+      void refetch();
+    },
+    onError: (err) => toast.error(err.message),
   });
 
   const toggleExpand = (orderId: number) => {
@@ -159,19 +181,24 @@ export default function MyOrders() {
   const filteredOrders = orders.filter((order) => {
     if (statusFilter !== "all") {
       if (statusFilter === "active") {
-        if (order.status === "delivered" || order.status === "cancelled") return false;
+        if (order.status === "delivered" || order.status === "cancelled") {
+          return false;
+        }
       } else if (order.status !== statusFilter) {
         return false;
       }
     }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const matchNumber = order.orderNumber.toLowerCase().includes(q);
-      const matchItem = order.items.some((i) =>
-        i.productName.toLowerCase().includes(q),
+      const matchItem = order.items.some((item) =>
+        item.productName.toLowerCase().includes(q),
       );
+
       return matchNumber || matchItem;
     }
+
     return true;
   });
 
@@ -187,14 +214,16 @@ export default function MyOrders() {
             My Orders
           </h1>
           <p className="text-xs sm:text-sm text-crochic-muted mt-1.5">
-            Signed in as <strong className="text-crochic-dark">{user.email}</strong>
+            Signed in as{" "}
+            <strong className="text-crochic-dark">{user.email}</strong>
           </p>
         </div>
+
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refetch()}
+            onClick={() => void refetch()}
             disabled={isRefetching}
             className="border-crochic-blush hover:bg-crochic-blush/20 text-crochic-dark text-xs gap-1.5 h-9"
           >
@@ -203,6 +232,7 @@ export default function MyOrders() {
             />
             <span>Refresh</span>
           </Button>
+
           <Link
             to="/shop"
             className="inline-flex items-center gap-1.5 bg-crochic-dark text-crochic-cream px-4 py-2 text-xs uppercase tracking-[0.14em] hover:bg-crochic-rose transition-colors h-9"
@@ -215,21 +245,20 @@ export default function MyOrders() {
 
       {/* Filters and Search Bar */}
       <div className="py-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Status filter tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs">
           {[
             { id: "all", label: `All (${orders.length})` },
             {
               id: "active",
-              label: `Active (${orders.filter((o) => o.status !== "delivered" && o.status !== "cancelled").length})`,
+              label: `Active (${orders.filter((order) => order.status !== "delivered" && order.status !== "cancelled").length})`,
             },
             {
               id: "delivered",
-              label: `Delivered (${orders.filter((o) => o.status === "delivered").length})`,
+              label: `Delivered (${orders.filter((order) => order.status === "delivered").length})`,
             },
             {
               id: "cancelled",
-              label: `Cancelled (${orders.filter((o) => o.status === "cancelled").length})`,
+              label: `Cancelled (${orders.filter((order) => order.status === "cancelled").length})`,
             },
           ].map((tab) => (
             <button
@@ -246,13 +275,12 @@ export default function MyOrders() {
           ))}
         </div>
 
-        {/* Search Input */}
         <div className="relative w-full md:w-64">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-crochic-muted" />
           <Input
             placeholder="Search order or item..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(event) => setSearchQuery(event.target.value)}
             className="pl-9 pr-3 h-9 text-xs bg-white border-crochic-blush focus-visible:ring-crochic-rose"
           />
         </div>
@@ -271,14 +299,17 @@ export default function MyOrders() {
           <div className="w-14 h-14 mx-auto rounded-full bg-crochic-blush/50 flex items-center justify-center text-crochic-rose mb-4">
             <Sparkles className="w-6 h-6" />
           </div>
+
           <h2 className="font-display text-2xl text-crochic-dark">
             {orders.length === 0 ? "No orders placed yet" : "No orders found"}
           </h2>
+
           <p className="text-xs sm:text-sm text-crochic-muted mt-2 max-w-sm mx-auto">
             {orders.length === 0
               ? "Every stitch has a story. Explore our handcrafted crochet collection to find your next favorite piece."
               : "Try adjusting your filter or search query to find the order you are looking for."}
           </p>
+
           <div className="mt-6">
             <Link
               to="/shop"
@@ -293,8 +324,11 @@ export default function MyOrders() {
         <div className="space-y-6">
           {filteredOrders.map((order) => {
             const statusMeta =
-              STATUS_CONFIG[order.status as OrderStatus] || STATUS_CONFIG.pending;
+              STATUS_CONFIG[order.status as OrderStatus] ||
+              STATUS_CONFIG.pending;
+
             const isExpanded = Boolean(expandedOrders[order.id]);
+
             const formattedDate = new Date(order.createdAt).toLocaleDateString(
               undefined,
               {
@@ -322,7 +356,9 @@ export default function MyOrders() {
                         {order.orderNumber}
                       </p>
                     </div>
+
                     <div className="h-6 w-px bg-crochic-blush hidden sm:block" />
+
                     <div className="flex items-center gap-1.5 text-xs text-crochic-muted">
                       <Calendar className="w-3.5 h-3.5" />
                       <span>{formattedDate}</span>
@@ -355,7 +391,9 @@ export default function MyOrders() {
                     <button
                       onClick={() => toggleExpand(order.id)}
                       className="p-1.5 text-crochic-muted hover:text-crochic-dark rounded-md hover:bg-crochic-blush/30 transition-colors"
-                      aria-label={isExpanded ? "Collapse details" : "Expand details"}
+                      aria-label={
+                        isExpanded ? "Collapse details" : "Expand details"
+                      }
                     >
                       {isExpanded ? (
                         <ChevronUp className="w-5 h-5" />
@@ -366,13 +404,13 @@ export default function MyOrders() {
                   </div>
                 </div>
 
-                {/* Progress Stepper (Mobile & Desktop) */}
+                {/* Progress Stepper */}
                 {order.status !== "cancelled" && (
                   <div className="px-4 py-5 sm:px-6 bg-white border-b border-crochic-blush/40">
                     <div className="max-w-2xl mx-auto">
                       <div className="flex items-center justify-between relative">
-                        {/* Connecting track line */}
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-crochic-cream z-0" />
+
                         <div
                           className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-crochic-rose transition-all duration-500 z-0"
                           style={{
@@ -388,13 +426,13 @@ export default function MyOrders() {
                           }}
                         />
 
-                        {/* Step circles */}
-                        {TRACKING_STEPS.map((s) => {
-                          const isCompleted = statusMeta.step >= s.step;
-                          const isCurrent = statusMeta.step === s.step;
+                        {TRACKING_STEPS.map((step) => {
+                          const isCompleted = statusMeta.step >= step.step;
+                          const isCurrent = statusMeta.step === step.step;
+
                           return (
                             <div
-                              key={s.step}
+                              key={step.step}
                               className="relative z-10 flex flex-col items-center"
                             >
                               <div
@@ -407,9 +445,10 @@ export default function MyOrders() {
                                 {isCompleted ? (
                                   <CheckCircle2 className="w-4 h-4" />
                                 ) : (
-                                  s.step
+                                  step.step
                                 )}
                               </div>
+
                               <span
                                 className={`text-[10px] sm:text-xs mt-1.5 font-medium ${
                                   isCompleted
@@ -417,7 +456,7 @@ export default function MyOrders() {
                                     : "text-crochic-muted"
                                 }`}
                               >
-                                {s.title}
+                                {step.title}
                               </span>
                             </div>
                           );
@@ -427,44 +466,182 @@ export default function MyOrders() {
                   </div>
                 )}
 
-                {/* Items Preview */}
+                {/* Items and Reviews */}
                 <div className="p-4 sm:p-6 divide-y divide-crochic-blush/30">
-                  <div className="space-y-3">
-                    {order.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          {item.imageUrl ? (
-                            <img
-                              src={item.imageUrl}
-                              alt={item.productName}
-                              className="w-12 h-12 rounded-lg object-cover bg-crochic-cream flex-shrink-0 border border-crochic-blush/50"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-crochic-blush/40 flex items-center justify-center flex-shrink-0 text-crochic-rose">
-                              <Package className="w-5 h-5" />
+                  <div className="space-y-4">
+                    {order.items.map((item) => {
+                      const savedReview = item.review ?? null;
+                      const form = reviewForms[item.id];
+
+                      const rating = form?.rating ?? savedReview?.rating ?? 5;
+                      const reviewText =
+                        form?.review ?? savedReview?.review ?? "";
+
+                      return (
+                        <div key={item.id} className="space-y-3 py-2">
+                          {/* Product Item */}
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                              {item.imageUrl ? (
+                                <img
+                                  src={item.imageUrl}
+                                  alt={item.productName}
+                                  className="w-12 h-12 rounded-lg object-cover bg-crochic-cream flex-shrink-0 border border-crochic-blush/50"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-crochic-blush/40 flex items-center justify-center flex-shrink-0 text-crochic-rose">
+                                  <Package className="w-5 h-5" />
+                                </div>
+                              )}
+
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-crochic-dark truncate">
+                                  {item.productName}
+                                </p>
+                                <p className="text-xs text-crochic-muted">
+                                  Qty: {item.quantity} ×{" "}
+                                  {formatPrice(
+                                    Number(item.unitPrice),
+                                    currency,
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+
+                            <span className="text-sm font-semibold text-crochic-dark flex-shrink-0">
+                              {formatPrice(Number(item.lineTotal), currency)}
+                            </span>
+                          </div>
+
+                          {/* Review Form: Delivered Orders Only */}
+                          {order.status === "delivered" && (
+                            <div className="ml-0 sm:ml-[60px] rounded-lg border border-crochic-blush/60 bg-crochic-cream/30 p-3 sm:p-4">
+                              {savedReview && (
+                                <p className="mb-3 text-xs text-crochic-muted">
+                                  {savedReview.approved
+                                    ? "Your review is published. Updating it will send it for approval again."
+                                    : "Your review is awaiting admin approval. You can still edit it below."}
+                                </p>
+                              )}
+
+                              {!savedReview && (
+                                <p className="mb-3 text-xs text-crochic-muted">
+                                  Enjoyed this handmade piece? Share your
+                                  experience with us.
+                                </p>
+                              )}
+
+                              <div className="mb-3">
+                                <label
+                                  htmlFor={`rating-${item.id}`}
+                                  className="block mb-1.5 text-xs font-medium text-crochic-dark"
+                                >
+                                  Your rating
+                                </label>
+
+                                <select
+                                  id={`rating-${item.id}`}
+                                  value={rating}
+                                  onChange={(event) => {
+                                    const nextRating = Number(
+                                      event.target.value,
+                                    );
+
+                                    setReviewForms((previous) => ({
+                                      ...previous,
+                                      [item.id]: {
+                                        rating: nextRating,
+                                        review:
+                                          previous[item.id]?.review ??
+                                          savedReview?.review ??
+                                          "",
+                                      },
+                                    }));
+                                  }}
+                                  disabled={submitReview.isPending}
+                                  className="w-full sm:w-auto rounded-md border border-crochic-blush bg-white px-3 py-2 text-sm text-crochic-dark focus:outline-none focus:ring-2 focus:ring-crochic-rose/30 disabled:opacity-60"
+                                >
+                                  {[5, 4, 3, 2, 1].map((value) => (
+                                    <option key={value} value={value}>
+                                      {"★".repeat(value)} ({value}/5)
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor={`review-${item.id}`}
+                                  className="block mb-1.5 text-xs font-medium text-crochic-dark"
+                                >
+                                  Your review
+                                </label>
+
+                                <textarea
+                                  id={`review-${item.id}`}
+                                  value={reviewText}
+                                  onChange={(event) => {
+                                    const nextReview = event.target.value;
+
+                                    setReviewForms((previous) => ({
+                                      ...previous,
+                                      [item.id]: {
+                                        rating:
+                                          previous[item.id]?.rating ??
+                                          savedReview?.rating ??
+                                          5,
+                                        review: nextReview,
+                                      },
+                                    }));
+                                  }}
+                                  disabled={submitReview.isPending}
+                                  maxLength={2000}
+                                  rows={3}
+                                  placeholder="Tell us what you loved about this item..."
+                                  className="w-full rounded-md border border-crochic-blush bg-white p-3 text-sm text-crochic-dark placeholder:text-crochic-muted focus:outline-none focus:ring-2 focus:ring-crochic-rose/30 disabled:opacity-60"
+                                />
+
+                                <div className="mt-1 text-right text-[11px] text-crochic-muted">
+                                  {reviewText.length}/2000 characters
+                                </div>
+                              </div>
+
+                              <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <p className="text-[11px] text-crochic-muted">
+                                  Reviews are published after admin approval.
+                                </p>
+
+                                <Button
+                                  size="sm"
+                                  disabled={
+                                    submitReview.isPending ||
+                                    reviewText.trim().length < 3 ||
+                                    reviewText.trim().length > 2000
+                                  }
+                                  onClick={() => {
+                                    submitReview.mutate({
+                                      orderItemId: item.id,
+                                      rating,
+                                      review: reviewText.trim(),
+                                    });
+                                  }}
+                                  className="bg-crochic-dark text-crochic-cream hover:bg-crochic-rose"
+                                >
+                                  {submitReview.isPending
+                                    ? "Saving review..."
+                                    : savedReview
+                                      ? "Update review"
+                                      : "Submit review"}
+                                </Button>
+                              </div>
                             </div>
                           )}
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-crochic-dark truncate">
-                              {item.productName}
-                            </p>
-                            <p className="text-xs text-crochic-muted">
-                              Qty: {item.quantity} ×{" "}
-                              {formatPrice(Number(item.unitPrice), currency)}
-                            </p>
-                          </div>
                         </div>
-                        <span className="text-sm font-semibold text-crochic-dark flex-shrink-0">
-                          {formatPrice(Number(item.lineTotal), currency)}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
-                  {/* Financials & Action bar */}
+                  {/* Financials & Action Bar */}
                   <div className="pt-4 mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="text-xs text-crochic-muted space-y-0.5">
                       <p>
@@ -484,6 +661,7 @@ export default function MyOrders() {
                           <> · Delivery: Free / Included</>
                         )}
                       </p>
+
                       <p className="text-sm font-semibold text-crochic-dark">
                         Total: {formatPrice(Number(order.total), currency)}{" "}
                         <span className="text-xs font-normal text-crochic-muted">
@@ -505,17 +683,20 @@ export default function MyOrders() {
                         <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
                         <span>Ask on WhatsApp</span>
                       </a>
+
                       <button
                         onClick={() => toggleExpand(order.id)}
                         className="text-xs text-crochic-rose underline underline-offset-4 hover:text-crochic-dark transition-colors py-1 px-2"
                       >
-                        {isExpanded ? "Hide tracking details" : "View tracking details"}
+                        {isExpanded
+                          ? "Hide tracking details"
+                          : "View tracking details"}
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Collapsible Tracking Timeline & Customer Address Details */}
+                {/* Collapsible Tracking Timeline & Customer Address */}
                 <AnimatePresence>
                   {isExpanded && (
                     <motion.div
@@ -532,34 +713,37 @@ export default function MyOrders() {
                             <Clock className="w-3.5 h-3.5 text-crochic-rose" />
                             <span>Live Status History</span>
                           </h4>
+
                           {order.statusHistory.length === 0 ? (
                             <p className="text-xs text-crochic-muted italic">
                               No status notes yet.
                             </p>
                           ) : (
                             <ol className="relative border-l border-crochic-blush ml-2 space-y-3">
-                              {order.statusHistory.map((h) => (
-                                <li key={h.id} className="mb-2 ml-4">
+                              {order.statusHistory.map((history) => (
+                                <li key={history.id} className="mb-2 ml-4">
                                   <div className="absolute w-2.5 h-2.5 bg-crochic-rose rounded-full -left-1.5 border border-white" />
+
                                   <div className="flex items-baseline justify-between gap-2">
                                     <span className="text-xs font-semibold text-crochic-dark capitalize">
-                                      {h.status}
+                                      {history.status}
                                     </span>
+
                                     <span className="text-[10px] text-crochic-muted">
-                                      {new Date(h.createdAt).toLocaleTimeString(
-                                        [],
-                                        {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                          month: "short",
-                                          day: "numeric",
-                                        },
-                                      )}
+                                      {new Date(
+                                        history.createdAt,
+                                      ).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        month: "short",
+                                        day: "numeric",
+                                      })}
                                     </span>
                                   </div>
-                                  {h.note && (
+
+                                  {history.note && (
                                     <p className="text-xs text-crochic-muted mt-0.5">
-                                      {h.note}
+                                      {history.note}
                                     </p>
                                   )}
                                 </li>
@@ -575,18 +759,23 @@ export default function MyOrders() {
                               <MapPin className="w-3.5 h-3.5 text-crochic-rose" />
                               <span>Delivery Destination</span>
                             </h4>
+
                             <p className="font-medium text-crochic-dark">
                               {order.customer.name}
                             </p>
+
                             <p className="text-crochic-muted">
                               {order.customer.address}
                             </p>
+
                             <p className="text-crochic-muted">
                               {order.customer.city}, {order.customer.country}
                             </p>
+
                             <p className="text-crochic-muted">
                               Phone: {order.customer.phone || "—"}
                             </p>
+
                             {order.notes && (
                               <p className="pt-2 text-crochic-dark border-t border-crochic-blush/40 italic">
                                 Note: &ldquo;{order.notes}&rdquo;
@@ -606,4 +795,3 @@ export default function MyOrders() {
     </div>
   );
 }
-

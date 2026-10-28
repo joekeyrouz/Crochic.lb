@@ -220,14 +220,36 @@ export const newsletterSubscribers = mysqlTable(
   (t) => [uniqueIndex("newsletter_email_unique").on(t.email)],
 );
 
-export const reviews = mysqlTable("reviews", {
-  id: serial("id").primaryKey(),
-  customerName: varchar("customerName", { length: 120 }).notNull(),
-  review: text("review").notNull(),
-  rating: int("rating").default(5).notNull(),
-  approved: boolean("approved").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+export const reviews = mysqlTable(
+  "reviews",
+  {
+    id: serial("id").primaryKey(),
+
+    // Nullable so existing reviews remain valid.
+    orderItemId: bigint("orderItemId", {
+      mode: "number",
+      unsigned: true,
+    }).references(() => orderItems.id, { onDelete: "set null" }),
+
+    customerId: bigint("customerId", {
+      mode: "number",
+      unsigned: true,
+    }).references(() => customers.id, { onDelete: "set null" }),
+
+    customerName: varchar("customerName", { length: 120 }).notNull(),
+    review: text("review").notNull(),
+    rating: int("rating").default(5).notNull(),
+
+    // New reviews must wait for admin approval.
+    approved: boolean("approved").default(false).notNull(),
+
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("reviews_order_item_unique").on(t.orderItemId),
+    index("reviews_customer_idx").on(t.customerId),
+  ],
+);
 
 export const photoLibrary = mysqlTable("photo_library", {
   id: serial("id").primaryKey(),
