@@ -1,13 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Context } from "hono";
 import { authenticateRequest } from "./auth";
+import { uploadImage } from "./lib/r2";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const imageDirectory = path.resolve(
-  process.env.PRODUCT_IMAGE_UPLOAD_DIR || "uploads/products",
-);
 
 const IMAGE_TYPES = {
   "image/jpeg": {
@@ -75,10 +73,12 @@ export async function uploadProductImage(context: Context) {
   } catch {
     return context.json({ error: "Invalid image upload." }, 400);
   }
+
   const image = formData.get("image");
   if (!(image instanceof File)) {
     return context.json({ error: "Choose an image file to upload." }, 400);
   }
+
   if (image.size === 0 || image.size > MAX_IMAGE_SIZE) {
     return context.json(
       { error: "Image must be between 1 byte and 5 MB." },
@@ -88,11 +88,9 @@ export async function uploadProductImage(context: Context) {
 
   const type = IMAGE_TYPES[image.type as keyof typeof IMAGE_TYPES];
   if (!type) {
-    return context.json(
-      { error: "Use a JPEG, PNG, WebP, or GIF image." },
-      400,
-    );
+    return context.json({ error: "Use a JPEG, PNG, WebP, or GIF image." }, 400);
   }
+
   const bytes = new Uint8Array(await image.arrayBuffer());
   if (!type.matches(bytes)) {
     return context.json(
@@ -102,36 +100,46 @@ export async function uploadProductImage(context: Context) {
   }
 
   const filename = `${randomUUID()}.${type.extension}`;
-  await mkdir(imageDirectory, { recursive: true });
-  await writeFile(path.join(imageDirectory, filename), bytes, { flag: "wx" });
-  return context.json({ url: `/api/product-images/${filename}` });
+  const key = `products/${filename}`;
+
+  try {
+    const url = await uploadImage(Buffer.from(bytes), key, image.type);
+    return context.json({ url });
+  } catch (error) {
+    console.error("Cloudflare R2 image upload failed:", error);
+    return context.json(
+      { error: "Image upload failed. Please try again." },
+      500,
+    );
+  }
 }
 
+// Kept temporarily for compatibility with any existing route imports.
+// New images are served directly from the public R2 URL.
 export async function getProductImage(context: Context) {
   const filename = context.req.param("filename");
-  if (!filename) {
+  if (!filename || !/^[0-9a-f-]{36}\.(jpg|png|webp|gif)$/.test(filename)) {
     return context.json({ error: "Image not found." }, 404);
   }
-  if (!/^[0-9a-f-]{36}\.(jpg|png|webp|gif)$/.test(filename)) {
-    return context.json({ error: "Image not found." }, 404);
-  }
+
+  // This endpoint only serves images from the old local uploads directory.
+  const imageDirectory = path.resolve(
+    process.env.PRODUCT_IMAGE_UPLOAD_DIR || "uploads/products",
+  );
+
   try {
     const bytes = await readFile(path.join(imageDirectory, filename));
-    const contentType =
-      filename.endsWith(".jpg")
-        ? "image/jpeg"
-        : `image/${path.extname(filename).slice(1)}`;
+    const contentType = filename.endsWith(".jpg")
+      ? "image/jpeg"
+      : `image/${path.extname(filename).slice(1)}`;
+
     return context.body(bytes, 200, {
       "Content-Type": contentType,
       "Cache-Control": "public, max-age=31536000, immutable",
       "X-Content-Type-Options": "nosniff",
     });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      "code" in error &&
-      error.code === "ENOENT"
-    ) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
       return context.json({ error: "Image not found." }, 404);
     }
     throw error;
