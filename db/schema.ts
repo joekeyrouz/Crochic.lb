@@ -229,6 +229,24 @@ export const reviews = mysqlTable("reviews", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const photoLibrary = mysqlTable("photo_library", {
+  id: serial("id").primaryKey(),
+  url: varchar("url", { length: 500 }).notNull(),
+  storageKey: varchar("storageKey", { length: 500 }).notNull().unique(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  alt: varchar("alt", { length: 200 }),
+  mimeType: varchar("mimeType", { length: 100 }).notNull(),
+  fileSize: int("fileSize").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export type PhotoLibraryImage = typeof photoLibrary.$inferSelect;
+export type InsertPhotoLibraryImage = typeof photoLibrary.$inferInsert;
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;

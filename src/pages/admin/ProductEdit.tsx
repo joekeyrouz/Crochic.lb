@@ -12,21 +12,6 @@ import {
 import { trpc } from "@/providers/trpc";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const LIBRARY = [
-  "/images/products/lipbalm-rose.jpg",
-  "/images/products/lipbalm-duo.jpg",
-  "/images/products/lipbalm-bow.jpg",
-  "/images/products/lipbalm-mocha.jpg",
-  "/images/products/keychain-leaf.jpg",
-  "/images/products/charm-set.jpg",
-  "/images/products/collection-flat.jpg",
-  "/images/products/sunflower-tote.jpg",
-  "/images/lifestyle/keyrings-hand.jpg",
-  "/images/lifestyle/court-bag.jpg",
-  "/images/lifestyle/tennis-player.jpg",
-  "/images/lifestyle/racket-charm.jpg",
-];
-
 interface FormState {
   name: string;
   sku: string;
@@ -72,23 +57,33 @@ export default function AdminProductEdit() {
   const isNew = !id;
   const navigate = useNavigate();
   const utils = trpc.useUtils();
+
   const { data: categories } = trpc.admin.categories.useQuery();
+
   const {
     data: existing,
     isLoading: productLoading,
     error: productError,
   } = trpc.admin.product.useQuery({ id: Number(id) }, { enabled: !isNew });
 
+  const {
+    data: libraryPhotos = [],
+    isLoading: libraryLoading,
+    error: libraryError,
+  } = trpc.admin.photoLibrary.useQuery();
+
   const [tab, setTab] = useState<(typeof TABS)[number]>("Basics");
   const [form, setForm] = useState<FormState>(EMPTY);
   const [images, setImages] = useState<string[]>([]);
   const [newImage, setNewImage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+
   const [alert, setAlert] = useState<{
     variant: "success" | "destructive" | "warning";
     title: string;
     message: string;
   } | null>(null);
+
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -111,19 +106,23 @@ export default function AdminProductEdit() {
         seoTitle: existing.seoTitle ?? "",
         seoDescription: existing.seoDescription ?? "",
       });
-      setImages(existing.images.map((i) => i.url));
+
+      setImages(existing.images.map((image) => image.url));
     }
   }, [existing]);
 
   const saveMutation = trpc.admin.saveProduct.useMutation();
   const updateMutation = trpc.admin.updateProduct.useMutation();
+
   const isSaving = saveMutation.isPending || updateMutation.isPending;
 
-  const set = (k: keyof FormState, v: string | boolean | number) =>
-    setForm((f) => ({ ...f, [k]: v }));
+  const set = (key: keyof FormState, value: string | boolean | number) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
 
   const addImage = (source = newImage) => {
     const image = source.trim();
+
     if (!image) {
       setAlert({
         variant: "warning",
@@ -133,6 +132,7 @@ export default function AdminProductEdit() {
       });
       return;
     }
+
     if (images.includes(image)) {
       setAlert({
         variant: "warning",
@@ -141,8 +141,10 @@ export default function AdminProductEdit() {
       });
       return;
     }
+
     setImages((current) => [...current, image]);
     setNewImage("");
+
     setAlert({
       variant: "success",
       title: "Image Added",
@@ -153,6 +155,7 @@ export default function AdminProductEdit() {
   const uploadImage = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
     if (file.size > 5 * 1024 * 1024) {
       setAlert({
         variant: "destructive",
@@ -165,24 +168,36 @@ export default function AdminProductEdit() {
 
     const data = new FormData();
     data.append("image", file);
+
     setIsUploading(true);
+
     try {
       const response = await fetch("/api/admin/product-images", {
         method: "POST",
         credentials: "include",
         body: data,
       });
+
       const result: { url?: string; error?: string } = await response.json();
+
       if (!response.ok || !result.url) {
         throw new Error(result.error || "Image upload failed.");
       }
+
       const uploadedUrl = result.url;
-      setImages((current) => [...current, uploadedUrl]);
+
+      setImages((current) =>
+        current.includes(uploadedUrl) ? current : [...current, uploadedUrl],
+      );
+
+      // Refresh the library so the newly uploaded photo appears there.
+      await utils.admin.photoLibrary.invalidate();
+
       setAlert({
         variant: "success",
         title: "Image Uploaded",
         message:
-          "Image uploaded successfully. Save the product to persist changes.",
+          "Image uploaded and added to the gallery. Save the product to persist product changes.",
       });
     } catch (error) {
       setAlert({
@@ -207,6 +222,7 @@ export default function AdminProductEdit() {
       });
       return;
     }
+
     const payload = {
       ...form,
       price: Number(form.price),
@@ -214,16 +230,22 @@ export default function AdminProductEdit() {
       stock: Number(form.stock) || 0,
       images,
     };
+
     try {
-      const res = isNew
+      const result = isNew
         ? await saveMutation.mutateAsync(payload)
-        : await updateMutation.mutateAsync({ ...payload, id: Number(id) });
+        : await updateMutation.mutateAsync({
+            ...payload,
+            id: Number(id),
+          });
+
       await Promise.all([
         utils.admin.products.invalidate(),
         utils.admin.stats.invalidate(),
         utils.shop.products.invalidate(),
         utils.shop.productBySlug.invalidate(),
       ]);
+
       setAlert({
         variant: "success",
         title: isNew ? "Product Created" : "Product Saved",
@@ -231,18 +253,23 @@ export default function AdminProductEdit() {
           ? `Product "${form.name}" has been created successfully.`
           : `All updates to "${form.name}" have been saved.`,
       });
-      if (isNew) navigate(`/admin/products/${res.id}`);
-    } catch (e) {
+
+      if (isNew) {
+        navigate(`/admin/products/${result.id}`);
+      }
+    } catch (error) {
       setAlert({
         variant: "destructive",
         title: "Save Failed",
-        message: e instanceof Error ? e.message : "Failed to save product.",
+        message:
+          error instanceof Error ? error.message : "Failed to save product.",
       });
     }
   };
 
   const input =
     "w-full bg-crochic-cream border border-crochic-blush px-4 py-3 text-sm focus:outline-none focus:border-crochic-rose";
+
   const label =
     "block text-[11px] uppercase tracking-[0.16em] text-crochic-muted mb-2";
 
@@ -253,6 +280,7 @@ export default function AdminProductEdit() {
       </p>
     );
   }
+
   if (!isNew && (productError || !existing)) {
     return (
       <div className="space-y-4 max-w-lg">
@@ -264,6 +292,7 @@ export default function AdminProductEdit() {
             {productError ? `: ${productError.message}` : "."}
           </AlertDescription>
         </Alert>
+
         <button
           type="button"
           onClick={() => navigate("/admin/products")}
@@ -282,7 +311,8 @@ export default function AdminProductEdit() {
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-crochic-muted hover:text-crochic-rose mb-6"
       >
-        <ArrowLeft className="w-4 h-4" /> Back
+        <ArrowLeft className="w-4 h-4" />
+        Back
       </button>
 
       {alert && (
@@ -293,8 +323,10 @@ export default function AdminProductEdit() {
             ) : (
               <AlertCircle className="w-4 h-4" />
             )}
+
             <AlertTitle>{alert.title}</AlertTitle>
             <AlertDescription>{alert.message}</AlertDescription>
+
             <button
               type="button"
               onClick={() => setAlert(null)}
@@ -311,6 +343,7 @@ export default function AdminProductEdit() {
         <h1 className="font-display text-4xl">
           {isNew ? "New product" : form.name || "Edit product"}
         </h1>
+
         <button
           type="button"
           onClick={submit}
@@ -326,18 +359,18 @@ export default function AdminProductEdit() {
       </div>
 
       <div className="flex gap-2 mb-8 border-b border-crochic-blush">
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <button
             type="button"
-            key={t}
-            onClick={() => setTab(t)}
+            key={item}
+            onClick={() => setTab(item)}
             className={`px-4 py-3 text-xs uppercase tracking-[0.14em] border-b-2 -mb-px transition-colors ${
-              tab === t
+              tab === item
                 ? "border-crochic-rose text-crochic-dark"
                 : "border-transparent text-crochic-muted"
             }`}
           >
-            {t}
+            {item}
           </button>
         ))}
       </div>
@@ -352,9 +385,10 @@ export default function AdminProductEdit() {
               id="p-name"
               className={input}
               value={form.name}
-              onChange={(e) => set("name", e.target.value)}
+              onChange={(event) => set("name", event.target.value)}
             />
           </div>
+
           <div>
             <label className={label} htmlFor="p-sku">
               SKU
@@ -363,9 +397,10 @@ export default function AdminProductEdit() {
               id="p-sku"
               className={input}
               value={form.sku}
-              onChange={(e) => set("sku", e.target.value)}
+              onChange={(event) => set("sku", event.target.value)}
             />
           </div>
+
           <div>
             <label className={label} htmlFor="p-cat">
               Collection
@@ -374,16 +409,19 @@ export default function AdminProductEdit() {
               id="p-cat"
               className={input}
               value={form.categoryId}
-              onChange={(e) => set("categoryId", Number(e.target.value))}
+              onChange={(event) =>
+                set("categoryId", Number(event.target.value))
+              }
             >
               <option value={0}>Choose…</option>
-              {categories?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+              {categories?.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>
           </div>
+
           <div>
             <label className={label} htmlFor="p-short">
               Short description
@@ -392,9 +430,10 @@ export default function AdminProductEdit() {
               id="p-short"
               className={input}
               value={form.shortDescription}
-              onChange={(e) => set("shortDescription", e.target.value)}
+              onChange={(event) => set("shortDescription", event.target.value)}
             />
           </div>
+
           <div className="sm:col-span-2">
             <label className={label} htmlFor="p-desc">
               Description
@@ -404,7 +443,7 @@ export default function AdminProductEdit() {
               rows={5}
               className={input}
               value={form.description}
-              onChange={(e) => set("description", e.target.value)}
+              onChange={(event) => set("description", event.target.value)}
             />
           </div>
         </div>
@@ -413,37 +452,49 @@ export default function AdminProductEdit() {
       {tab === "Pricing & stock" && (
         <div className="grid sm:grid-cols-3 gap-6">
           <div>
-            <label className={label}>Price</label>
+            <label className={label} htmlFor="p-price">
+              Price
+            </label>
             <input
+              id="p-price"
               type="number"
               min="0"
               step="0.01"
               className={input}
               value={form.price}
-              onChange={(e) => set("price", e.target.value)}
+              onChange={(event) => set("price", event.target.value)}
             />
           </div>
+
           <div>
-            <label className={label}>Sale price</label>
+            <label className={label} htmlFor="p-sale-price">
+              Sale price
+            </label>
             <input
+              id="p-sale-price"
               type="number"
               min="0"
               step="0.01"
               className={input}
               value={form.salePrice}
-              onChange={(e) => set("salePrice", e.target.value)}
+              onChange={(event) => set("salePrice", event.target.value)}
             />
           </div>
+
           <div>
-            <label className={label}>Stock</label>
+            <label className={label} htmlFor="p-stock">
+              Stock
+            </label>
             <input
+              id="p-stock"
               type="number"
               min="0"
               className={input}
               value={form.stock}
-              onChange={(e) => set("stock", e.target.value)}
+              onChange={(event) => set("stock", event.target.value)}
             />
           </div>
+
           <div className="sm:col-span-3 flex gap-8 pt-2">
             {(
               [
@@ -451,18 +502,18 @@ export default function AdminProductEdit() {
                 ["isNew", "New arrival"],
                 ["active", "Active (visible in shop)"],
               ] as const
-            ).map(([k, l]) => (
+            ).map(([key, text]) => (
               <label
-                key={k}
+                key={key}
                 className="flex items-center gap-3 text-sm cursor-pointer"
               >
                 <input
                   type="checkbox"
                   className="accent-crochic-rose w-4 h-4"
-                  checked={form[k]}
-                  onChange={(e) => set(k, e.target.checked)}
+                  checked={form[key]}
+                  onChange={(event) => set(key, event.target.checked)}
                 />
-                {l}
+                {text}
               </label>
             ))}
           </div>
@@ -479,6 +530,7 @@ export default function AdminProductEdit() {
             aria-label="Choose product image from device"
             onChange={uploadImage}
           />
+
           <div className="mb-6">
             <button
               type="button"
@@ -489,45 +541,89 @@ export default function AdminProductEdit() {
               <ImagePlus className="w-4 h-4" />
               {isUploading ? "Uploading…" : "Add image from device"}
             </button>
+
             <p className="mt-2 text-xs text-crochic-muted">
               JPEG, PNG, WebP, or GIF; maximum 5 MB.
             </p>
           </div>
+
           <p className={label}>
             Photo library — click to add. Changes are saved with Save product.
           </p>
-          <div className="flex gap-2 flex-wrap mb-8">
-            {LIBRARY.map((src) => (
+
+          {libraryLoading ? (
+            <p role="status" className="text-sm text-crochic-muted mb-8">
+              Loading photo library…
+            </p>
+          ) : libraryError ? (
+            <div className="mb-8">
+              <Alert variant="destructive">
+                <AlertCircle className="w-4 h-4" />
+                <AlertTitle>Photo Library Error</AlertTitle>
+                <AlertDescription>
+                  Could not load photos: {libraryError.message}
+                </AlertDescription>
+              </Alert>
               <button
                 type="button"
-                key={src}
-                aria-label={`Add ${src.split("/").pop()} from photo library`}
-                title={src.split("/").pop()}
-                onClick={() => addImage(src)}
-                disabled={isUploading || isSaving}
-                className="w-16 h-20 overflow-hidden border border-crochic-blush hover:border-crochic-rose"
+                onClick={() => utils.admin.photoLibrary.invalidate()}
+                className="mt-2 text-sm underline text-crochic-muted"
               >
-                <img src={src} alt="" className="w-full h-full object-cover" />
+                Try again
               </button>
-            ))}
-          </div>
+            </div>
+          ) : libraryPhotos.length === 0 ? (
+            <p className="text-sm text-crochic-muted italic mb-8">
+              Your photo library is empty. Upload an image from your device to
+              add the first photo.
+            </p>
+          ) : (
+            <div className="flex gap-2 flex-wrap mb-8">
+              {libraryPhotos.map((photo) => (
+                <button
+                  type="button"
+                  key={photo.id}
+                  aria-label={`Add ${photo.fileName} from photo library`}
+                  title={photo.fileName}
+                  onClick={() => addImage(photo.url)}
+                  disabled={isUploading || isSaving}
+                  className="w-16 h-20 overflow-hidden border border-crochic-blush hover:border-crochic-rose disabled:opacity-60"
+                >
+                  <img
+                    src={photo.url}
+                    alt={photo.alt ?? photo.fileName}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+
           <p className={label}>Current images (first = primary)</p>
+
           <div className="flex gap-3 flex-wrap">
-            {images.map((src, i) => (
+            {images.map((src, index) => (
               <div
-                key={src + i}
+                key={src + index}
                 className="relative w-24 h-32 group border border-crochic-blush"
               >
                 <img src={src} alt="" className="w-full h-full object-cover" />
-                {i === 0 && (
+
+                {index === 0 && (
                   <span className="absolute top-1 left-1 bg-crochic-gold text-white p-1">
                     <Star className="w-3 h-3" />
                   </span>
                 )}
+
                 <button
                   type="button"
                   className="absolute top-1 right-1 bg-crochic-dark/80 text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => setImages(images.filter((_, j) => j !== i))}
+                  onClick={() =>
+                    setImages((current) =>
+                      current.filter((_, imageIndex) => imageIndex !== index),
+                    )
+                  }
                   disabled={isUploading || isSaving}
                   aria-label="Remove image"
                 >
@@ -535,6 +631,7 @@ export default function AdminProductEdit() {
                 </button>
               </div>
             ))}
+
             {images.length === 0 && (
               <p className="text-sm text-crochic-muted italic">
                 No images yet.
@@ -547,44 +644,63 @@ export default function AdminProductEdit() {
       {tab === "Details & SEO" && (
         <div className="grid sm:grid-cols-2 gap-6">
           <div>
-            <label className={label}>Materials</label>
+            <label className={label} htmlFor="p-materials">
+              Materials
+            </label>
             <input
+              id="p-materials"
               className={input}
               value={form.materials}
-              onChange={(e) => set("materials", e.target.value)}
+              onChange={(event) => set("materials", event.target.value)}
             />
           </div>
+
           <div>
-            <label className={label}>Dimensions</label>
+            <label className={label} htmlFor="p-dimensions">
+              Dimensions
+            </label>
             <input
+              id="p-dimensions"
               className={input}
               value={form.dimensions}
-              onChange={(e) => set("dimensions", e.target.value)}
+              onChange={(event) => set("dimensions", event.target.value)}
             />
           </div>
+
           <div className="sm:col-span-2">
-            <label className={label}>Care instructions</label>
+            <label className={label} htmlFor="p-care">
+              Care instructions
+            </label>
             <textarea
+              id="p-care"
               rows={3}
               className={input}
               value={form.careInstructions}
-              onChange={(e) => set("careInstructions", e.target.value)}
+              onChange={(event) => set("careInstructions", event.target.value)}
             />
           </div>
+
           <div>
-            <label className={label}>SEO title</label>
+            <label className={label} htmlFor="p-seo-title">
+              SEO title
+            </label>
             <input
+              id="p-seo-title"
               className={input}
               value={form.seoTitle}
-              onChange={(e) => set("seoTitle", e.target.value)}
+              onChange={(event) => set("seoTitle", event.target.value)}
             />
           </div>
+
           <div>
-            <label className={label}>SEO description</label>
+            <label className={label} htmlFor="p-seo-description">
+              SEO description
+            </label>
             <input
+              id="p-seo-description"
               className={input}
               value={form.seoDescription}
-              onChange={(e) => set("seoDescription", e.target.value)}
+              onChange={(event) => set("seoDescription", event.target.value)}
             />
           </div>
         </div>

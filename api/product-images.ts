@@ -4,6 +4,8 @@ import path from "node:path";
 import type { Context } from "hono";
 import { authenticateRequest } from "./auth";
 import { uploadImage } from "./lib/r2";
+import { getDb } from "./queries/connection";
+import { photoLibrary } from "@db/schema";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
@@ -100,13 +102,24 @@ export async function uploadProductImage(context: Context) {
   }
 
   const filename = `${randomUUID()}.${type.extension}`;
-  const key = `products/${filename}`;
+  const key = `library/${filename}`;
 
   try {
     const url = await uploadImage(Buffer.from(bytes), key, image.type);
+
+    await getDb()
+      .insert(photoLibrary)
+      .values({
+        url,
+        storageKey: key,
+        fileName: image.name.slice(0, 255) || filename,
+        mimeType: image.type,
+        fileSize: image.size,
+      });
+
     return context.json({ url });
   } catch (error) {
-    console.error("Cloudflare R2 image upload failed:", error);
+    console.error("Photo Library upload failed:", error);
     return context.json(
       { error: "Image upload failed. Please try again." },
       500,

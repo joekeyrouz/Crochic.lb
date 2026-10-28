@@ -9,6 +9,7 @@ import {
   orderItems,
   orderStatusHistory,
   orders,
+  photoLibrary,
   productImages,
   products,
   siteSettings,
@@ -55,6 +56,12 @@ const productInput = z.object({
 });
 
 export const adminRouter = createRouter({
+  /* ---------------------------- photo library ---------------------------- */
+  photoLibrary: adminQuery.query(async () => {
+    return getDb().query.photoLibrary.findMany({
+      orderBy: desc(photoLibrary.createdAt),
+    });
+  }),
   /* ------------------------------ dashboard ------------------------------ */
   stats: adminQuery.query(async () => {
     const db = getDb();
