@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
+  ImagePlus,
   Pencil,
+  Upload,
   Plus,
   Trash2,
   X,
@@ -27,6 +29,14 @@ export default function AdminCategories() {
     isLoading,
     error,
   } = trpc.admin.categories.useQuery();
+  const {
+    data: libraryPhotos,
+    isLoading: libraryLoading,
+    error: libraryError,
+  } = trpc.admin.photoLibrary.useQuery();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showPhotoLibrary, setShowPhotoLibrary] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<{
     id: number;
@@ -47,6 +57,7 @@ export default function AdminCategories() {
 
   const resetForm = () => {
     setEditing(null);
+    setShowPhotoLibrary(false);
     setForm({
       name: "",
       description: "",
@@ -93,7 +104,8 @@ export default function AdminCategories() {
       setAlert({
         variant: "success",
         title: "Collection Deleted",
-        message: "The collection has been deleted. Assigned products are now unassigned.",
+        message:
+          "The collection has been deleted. Assigned products are now unassigned.",
       });
     },
     onError: (e) => {
@@ -105,6 +117,64 @@ export default function AdminCategories() {
       });
     },
   });
+
+  const uploadCollectionImage = async (file?: File) => {
+    if (!file) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      setAlert({
+        variant: "destructive",
+        title: "Unsupported Image",
+        message: "Choose a JPG, PNG, WebP, or GIF image.",
+      });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAlert({
+        variant: "destructive",
+        title: "Image Too Large",
+        message: "Choose an image smaller than 5 MB.",
+      });
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const body = new FormData();
+      body.append("image", file);
+      const response = await fetch("/api/admin/product-images", {
+        method: "POST",
+        body,
+        credentials: "include",
+      });
+      const result = await response.json();
+      if (!response.ok || typeof result.url !== "string") {
+        throw new Error(
+          result.error || "Image upload failed. Please try again.",
+        );
+      }
+      setForm((current) => ({ ...current, image: result.url }));
+      await utils.admin.photoLibrary.invalidate();
+      setShowPhotoLibrary(false);
+      setAlert({
+        variant: "success",
+        title: "Image Uploaded",
+        message:
+          "The image was uploaded and selected for this collection. Save the collection to keep it.",
+      });
+    } catch (error) {
+      setAlert({
+        variant: "destructive",
+        title: "Image Upload Failed",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Image upload failed. Please try again.",
+      });
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const input =
     "w-full bg-crochic-cream border border-crochic-blush px-4 py-3 text-sm focus:outline-none focus:border-crochic-rose";
@@ -170,14 +240,116 @@ export default function AdminCategories() {
               minLength={2}
               maxLength={120}
             />
-            <input
-              className={input}
-              placeholder="Image path (optional)"
-              aria-label="Collection image path"
-              value={form.image}
-              onChange={(e) => setForm({ ...form, image: e.target.value })}
-              maxLength={500}
-            />
+            <div className="sm:col-span-2 space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  className="inline-flex items-center gap-2 border border-crochic-blush px-4 py-3 text-xs uppercase tracking-[0.12em] hover:border-crochic-rose disabled:opacity-60"
+                >
+                  <Upload className="w-4 h-4" />
+                  {uploadingImage ? "Uploading…" : "Upload image"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoLibrary((shown) => !shown)}
+                  className="inline-flex items-center gap-2 border border-crochic-blush px-4 py-3 text-xs uppercase tracking-[0.12em] hover:border-crochic-rose"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  {showPhotoLibrary
+                    ? "Close Photo Library"
+                    : "Choose from Photo Library"}
+                </button>
+                {form.image && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((current) => ({ ...current, image: "" }))
+                    }
+                    className="px-2 py-2 text-xs text-crochic-muted hover:text-crochic-rose"
+                  >
+                    Remove image
+                  </button>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(event) =>
+                  void uploadCollectionImage(event.target.files?.[0])
+                }
+              />
+              {form.image ? (
+                <div className="flex items-start gap-4 border border-crochic-blush p-3">
+                  <img
+                    src={form.image}
+                    alt="Selected collection"
+                    className="h-28 w-28 object-cover bg-crochic-blush/30"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">
+                      Collection image selected
+                    </p>
+                    <p className="mt-1 break-all text-xs text-crochic-muted">
+                      {form.image}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-crochic-muted">
+                  No collection image selected (optional).
+                </p>
+              )}
+              {showPhotoLibrary && (
+                <div className="border border-crochic-blush p-4">
+                  <h3 className="mb-3 text-sm font-medium">Choose an image</h3>
+                  {libraryLoading ? (
+                    <p className="text-sm text-crochic-muted">
+                      Loading Photo Library…
+                    </p>
+                  ) : libraryError ? (
+                    <p role="alert" className="text-sm text-red-700">
+                      Could not load Photo Library: {libraryError.message}
+                    </p>
+                  ) : libraryPhotos?.length ? (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                      {libraryPhotos.map((photo) => (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => {
+                            setForm((current) => ({
+                              ...current,
+                              image: photo.url,
+                            }));
+                            setShowPhotoLibrary(false);
+                          }}
+                          className={`overflow-hidden border text-left transition-colors ${form.image === photo.url ? "border-crochic-rose ring-2 ring-crochic-rose" : "border-crochic-blush hover:border-crochic-rose"}`}
+                          aria-label={`Choose ${photo.fileName}`}
+                        >
+                          <img
+                            src={photo.url}
+                            alt={photo.alt || photo.fileName}
+                            className="aspect-square w-full object-cover bg-crochic-blush/20"
+                          />
+                          <span className="block truncate px-2 py-2 text-xs">
+                            {photo.fileName}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-crochic-muted">
+                      Your Photo Library is empty. Upload an image to get
+                      started.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
             <textarea
               className={`${input} sm:col-span-2`}
               placeholder="Description"
