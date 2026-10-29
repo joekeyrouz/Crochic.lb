@@ -92,3 +92,23 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes review-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-review-marquee {
+  animation: review-marquee 42s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-review-marquee {
+    animation: none;
+  }
+}

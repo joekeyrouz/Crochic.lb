@@ -1,5 +1,10 @@
 import { Link } from "react-router";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import { trpc } from "@/providers/trpc";
@@ -11,7 +16,10 @@ import { useSettings } from "@/lib/shop";
 function Hero() {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
   const yImage = useTransform(scrollYProgress, [0, 1], [0, 80]);
 
   return (
@@ -33,9 +41,17 @@ function Hero() {
                   className="block"
                   initial={{ y: "110%" }}
                   animate={{ y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.2 + i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{
+                    duration: 0.8,
+                    delay: 0.2 + i * 0.15,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
                 >
-                  {i === 1 ? <em className="text-crochic-rose">{line}</em> : line}
+                  {i === 1 ? (
+                    <em className="text-crochic-rose">{line}</em>
+                  ) : (
+                    line
+                  )}
                 </motion.span>
               </span>
             ))}
@@ -91,14 +107,20 @@ function Hero() {
               animate={reduce ? undefined : { y: [0, -10, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             >
-              <img src="/images/products/lipbalm-bow.jpg" alt="Crochet lip balm holder with bow" className="w-full h-full object-cover" />
+              <img
+                src="/images/products/lipbalm-bow.jpg"
+                alt="Crochet lip balm holder with bow"
+                className="w-full h-full object-cover"
+              />
             </motion.div>
             <motion.div
               className="absolute -top-4 right-4 sm:right-10 bg-crochic-ivory px-5 py-3 shadow-md rotate-3"
               animate={reduce ? undefined : { rotate: [3, 5, 3] }}
               transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
             >
-              <span className="font-display italic text-lg text-crochic-brown">handmade with elegance</span>
+              <span className="font-display italic text-lg text-crochic-brown">
+                handmade with elegance
+              </span>
             </motion.div>
           </motion.div>
         </div>
@@ -125,8 +147,8 @@ function BrandStatement() {
         <Reveal delay={0.2}>
           <p className="mt-8 max-w-xl mx-auto text-crochic-muted leading-relaxed">
             Every CroChic piece begins as a skein of cotton yarn and a single
-            hook. No machines, no production line — just patient stitches,
-            soft colours, and the quiet joy of making something real.
+            hook. No machines, no production line — just patient stitches, soft
+            colours, and the quiet joy of making something real.
           </p>
         </Reveal>
       </div>
@@ -144,9 +166,14 @@ function Collections() {
         <Reveal className="flex items-end justify-between mb-12">
           <div>
             <p className="eyebrow mb-3">Collections</p>
-            <h2 className="font-display text-4xl sm:text-5xl">Find your little thing</h2>
+            <h2 className="font-display text-4xl sm:text-5xl">
+              Find your little thing
+            </h2>
           </div>
-          <Link to="/shop" className="hidden sm:flex items-center gap-2 text-xs uppercase tracking-[0.18em] link-underline">
+          <Link
+            to="/shop"
+            className="hidden sm:flex items-center gap-2 text-xs uppercase tracking-[0.18em] link-underline"
+          >
             View all <ArrowRight className="w-4 h-4" />
           </Link>
         </Reveal>
@@ -168,7 +195,9 @@ function Collections() {
                 <div className="absolute inset-0 bg-gradient-to-t from-crochic-dark/70 via-crochic-dark/10 to-transparent" />
                 <div className="absolute bottom-0 p-7 text-crochic-cream">
                   <h3 className="font-display text-3xl mb-2">{cat.name}</h3>
-                  <p className="text-sm text-crochic-cream/80 line-clamp-2 max-w-[28ch]">{cat.description}</p>
+                  <p className="text-sm text-crochic-cream/80 line-clamp-2 max-w-[28ch]">
+                    {cat.description}
+                  </p>
                   <span className="mt-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] border-b border-crochic-cream/50 pb-1 group-hover:gap-3 transition-all">
                     Explore <ArrowRight className="w-3.5 h-3.5" />
                   </span>
@@ -191,7 +220,9 @@ function Featured() {
       <div className="container-crochic">
         <Reveal className="text-center mb-14">
           <p className="eyebrow mb-3">Loved pieces</p>
-          <h2 className="font-display text-4xl sm:text-5xl">Featured this season</h2>
+          <h2 className="font-display text-4xl sm:text-5xl">
+            Featured this season
+          </h2>
         </Reveal>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12">
           {data.slice(0, 4).map((p, i) => (
@@ -214,7 +245,10 @@ function Featured() {
 /* ------------------------------- Story ----------------------------------- */
 function Story() {
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
   const y = useTransform(scrollYProgress, [0, 1], [40, -40]);
   const reduce = useReducedMotion();
 
@@ -222,9 +256,22 @@ function Story() {
     <section ref={ref} className="py-24 lg:py-32 overflow-hidden">
       <div className="container-crochic grid lg:grid-cols-2 gap-14 items-center">
         <div className="relative">
-          <motion.div style={reduce ? undefined : { y }} className="grid grid-cols-2 gap-4">
-            <img src="/images/lifestyle/keyrings-hand.jpg" alt="Hands holding crochet keyrings" className="w-full aspect-[3/4] object-cover rounded-t-[6rem]" loading="lazy" />
-            <img src="/images/products/collection-flat.jpg" alt="Flat lay of CroChic crochet pieces" className="w-full aspect-[3/4] object-cover mt-12 rounded-b-[6rem]" loading="lazy" />
+          <motion.div
+            style={reduce ? undefined : { y }}
+            className="grid grid-cols-2 gap-4"
+          >
+            <img
+              src="/images/lifestyle/keyrings-hand.jpg"
+              alt="Hands holding crochet keyrings"
+              className="w-full aspect-[3/4] object-cover rounded-t-[6rem]"
+              loading="lazy"
+            />
+            <img
+              src="/images/products/collection-flat.jpg"
+              alt="Flat lay of CroChic crochet pieces"
+              className="w-full aspect-[3/4] object-cover mt-12 rounded-b-[6rem]"
+              loading="lazy"
+            />
           </motion.div>
           <div className="absolute -z-10 top-1/3 -left-8 w-48 h-48 rounded-full bg-crochic-blush/50 blur-2xl" />
         </div>
@@ -248,7 +295,10 @@ function Story() {
             </p>
           </Reveal>
           <Reveal delay={0.2}>
-            <Link to="/about" className="text-xs uppercase tracking-[0.2em] border-b border-crochic-brown pb-1 hover:text-crochic-rose transition-colors">
+            <Link
+              to="/about"
+              className="text-xs uppercase tracking-[0.2em] border-b border-crochic-brown pb-1 hover:text-crochic-rose transition-colors"
+            >
               Read our story
             </Link>
           </Reveal>
@@ -260,10 +310,26 @@ function Story() {
 
 /* ------------------------------ Why CroChic ------------------------------ */
 const WHY = [
-  { title: "Handmade", text: "Every piece is made by hand — one hook, one stitch at a time.", icon: "✿" },
-  { title: "Thoughtful", text: "Designed for the small everyday moments that deserve beauty.", icon: "❀" },
-  { title: "Unique", text: "No two handmade pieces feel exactly the same. Yours is yours.", icon: "✽" },
-  { title: "Made with love", text: "Every stitch carries the character of the maker.", icon: "❁" },
+  {
+    title: "Handmade",
+    text: "Every piece is made by hand — one hook, one stitch at a time.",
+    icon: "✿",
+  },
+  {
+    title: "Thoughtful",
+    text: "Designed for the small everyday moments that deserve beauty.",
+    icon: "❀",
+  },
+  {
+    title: "Unique",
+    text: "No two handmade pieces feel exactly the same. Yours is yours.",
+    icon: "✽",
+  },
+  {
+    title: "Made with love",
+    text: "Every stitch carries the character of the maker.",
+    icon: "❁",
+  },
 ];
 
 function WhyCroChic() {
@@ -272,7 +338,9 @@ function WhyCroChic() {
       <div className="container-crochic">
         <Reveal className="text-center mb-14">
           <p className="eyebrow mb-3">Why CroChic</p>
-          <h2 className="font-display text-4xl sm:text-5xl">Little reasons to love us</h2>
+          <h2 className="font-display text-4xl sm:text-5xl">
+            Little reasons to love us
+          </h2>
         </Reveal>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
           {WHY.map((w, i) => (
@@ -281,7 +349,9 @@ function WhyCroChic() {
                 {w.icon}
               </div>
               <h3 className="font-display text-2xl mb-2">{w.title}</h3>
-              <p className="text-sm text-crochic-muted leading-relaxed">{w.text}</p>
+              <p className="text-sm text-crochic-muted leading-relaxed">
+                {w.text}
+              </p>
             </Reveal>
           ))}
         </div>
@@ -291,34 +361,64 @@ function WhyCroChic() {
 }
 
 /* ----------------------------- Testimonials ------------------------------ */
+
 function Testimonials() {
   const { data: reviews } = trpc.shop.reviews.useQuery();
+  const reduceMotion = useReducedMotion();
+
   if (!reviews?.length) return null;
+
+  const shouldLoop = reviews.length > 3;
+
+  const cards = (items: typeof reviews) =>
+    items.map((r) => (
+      <div key={r.id} className="w-[300px] sm:w-[360px] shrink-0">
+        <figure className="h-full min-h-[230px] bg-crochic-ivory border border-crochic-blush p-8 flex flex-col">
+          <div
+            className="text-crochic-gold tracking-widest mb-4"
+            aria-label={`${r.rating} stars`}
+          >
+            {"★".repeat(r.rating)}
+          </div>
+          <blockquote className="font-display text-xl italic leading-relaxed flex-1">
+            “{r.review}”
+          </blockquote>
+          <figcaption className="mt-6 text-xs uppercase tracking-[0.18em] text-crochic-muted">
+            {r.customerName}
+          </figcaption>
+        </figure>
+      </div>
+    ));
+
   return (
-    <section className="py-24">
+    <section className="py-24 overflow-hidden">
       <div className="container-crochic">
         <Reveal className="text-center mb-12">
           <p className="eyebrow mb-3">Kind words</p>
-          <h2 className="font-display text-4xl sm:text-5xl">From our little community</h2>
+          <h2 className="font-display text-4xl sm:text-5xl">
+            From our little community
+          </h2>
         </Reveal>
-        <div className="flex gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 lg:grid lg:grid-cols-3 lg:overflow-visible">
-          {reviews.map((r, i) => (
-            <Reveal key={r.id} delay={i * 0.1} className="snap-center shrink-0 w-[85vw] sm:w-[60vw] lg:w-auto">
-              <figure className="h-full bg-crochic-ivory border border-crochic-blush p-8 flex flex-col">
-                <div className="text-crochic-gold tracking-widest mb-4" aria-label={`${r.rating} stars`}>
-                  {"★".repeat(r.rating)}
-                </div>
-                <blockquote className="font-display text-xl italic leading-relaxed flex-1">
-                  “{r.review}”
-                </blockquote>
-                <figcaption className="mt-6 text-xs uppercase tracking-[0.18em] text-crochic-muted">
-                  {r.customerName}
-                </figcaption>
-              </figure>
-            </Reveal>
-          ))}
-        </div>
       </div>
+
+      {shouldLoop && !reduceMotion ? (
+        <div className="group relative overflow-hidden">
+          <div className="flex w-max gap-6 animate-review-marquee group-hover:[animation-play-state:paused]">
+            <div className="flex shrink-0 gap-6" aria-label="Customer reviews">
+              {cards(reviews)}
+            </div>
+            <div className="flex shrink-0 gap-6" aria-hidden="true">
+              {cards(reviews)}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="container-crochic">
+          <div className="flex gap-6 overflow-x-auto no-scrollbar pb-4">
+            {cards(reviews)}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -341,7 +441,9 @@ function InstagramSection() {
       <div className="container-crochic">
         <Reveal className="text-center mb-12">
           <p className="eyebrow mb-3">Instagram</p>
-          <h2 className="font-display text-4xl sm:text-5xl">Follow the little things</h2>
+          <h2 className="font-display text-4xl sm:text-5xl">
+            Follow the little things
+          </h2>
           <a
             href={url}
             target="_blank"
@@ -354,8 +456,18 @@ function InstagramSection() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {IG_IMAGES.map((src, i) => (
             <Reveal key={src} delay={i * 0.06}>
-              <a href={url} target="_blank" rel="noreferrer" className="group block relative overflow-hidden aspect-square bg-crochic-blush/30">
-                <img src={src} alt="CroChic on Instagram" loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="group block relative overflow-hidden aspect-square bg-crochic-blush/30"
+              >
+                <img
+                  src={src}
+                  alt="CroChic on Instagram"
+                  loading="lazy"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
                 <div className="absolute inset-0 bg-crochic-rose/0 group-hover:bg-crochic-rose/30 transition-colors duration-300" />
               </a>
             </Reveal>
@@ -397,7 +509,9 @@ function Newsletter() {
               subscribe.mutate({ email });
             }}
           >
-            <label htmlFor="newsletter-email" className="sr-only">Email address</label>
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email address
+            </label>
             <input
               id="newsletter-email"
               type="email"
