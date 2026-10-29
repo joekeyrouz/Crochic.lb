@@ -11,6 +11,7 @@ import {
   Settings as SettingsIcon,
   Store,
   X,
+  Star,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ const NAV = [
   { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { to: "/admin/customers", label: "Customers", icon: Users },
   { to: "/admin/settings", label: "Settings", icon: SettingsIcon },
+  { to: "/admin/reviews", label: "Reviews", icon: Star },
 ];
 
 export function AdminLayout() {

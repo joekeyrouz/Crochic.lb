@@ -12,6 +12,7 @@ import {
   photoLibrary,
   productImages,
   products,
+  reviews,
   siteSettings,
 } from "@db/schema";
 
@@ -583,6 +584,60 @@ export const adminRouter = createRouter({
       }
 
       await getDb().delete(customers).where(eq(customers.id, input.id));
+      return { success: true };
+    }),
+
+  /* -------------------------------- reviews ------------------------------- */
+  reviews: adminQuery.query(async () => {
+    return getDb().query.reviews.findMany({
+      orderBy: desc(reviews.createdAt),
+    });
+  }),
+
+  approveReview: adminQuery
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+
+      const review = await db.query.reviews.findFirst({
+        where: eq(reviews.id, input.id),
+        columns: { id: true },
+      });
+
+      if (!review) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Review not found.",
+        });
+      }
+
+      await db
+        .update(reviews)
+        .set({ approved: true })
+        .where(eq(reviews.id, input.id));
+
+      return { success: true };
+    }),
+
+  rejectReview: adminQuery
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+
+      const review = await db.query.reviews.findFirst({
+        where: eq(reviews.id, input.id),
+        columns: { id: true },
+      });
+
+      if (!review) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Review not found.",
+        });
+      }
+
+      await db.delete(reviews).where(eq(reviews.id, input.id));
+
       return { success: true };
     }),
 
